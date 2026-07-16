@@ -1,0 +1,57 @@
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AgentTable</title>
+<link rel="stylesheet" href="static/style.css" />
+<div id="app">
+  <header>
+    <h1>🗓️ AgentTable</h1>
+    <div id="whoami" class="muted">lade…</div>
+  </header>
+
+  <main id="layout">
+    <!-- left: private chat -->
+    <section id="private" class="pane">
+      <h2>Dein Agent</h2>
+      <div id="persona" class="persona hidden"></div>
+      <div id="private-log" class="log"></div>
+      <form id="private-form" class="composer">
+        <input id="private-input" autocomplete="off" placeholder="Schreib deinem Agenten…" />
+        <button type="submit">Senden</button>
+      </form>
+    </section>
+
+    <!-- right: room + task panel -->
+    <section id="right" class="pane">
+      <div id="task-panel" class="task-panel">
+        <div class="task-head">
+          <h2>Gruppenraum</h2>
+          <button id="start-btn" class="secondary">＋ Terminfindung</button>
+        </div>
+        <div id="task-status" class="task-status muted">Keine Terminfindung aktiv.</div>
+      </div>
+      <div id="room-log" class="log room"></div>
+      <div class="room-hint muted">👀 Der Gruppenraum ist für dich live mitlesbar (read-only).</div>
+    </section>
+  </main>
+
+  <!-- start-task dialog -->
+  <dialog id="start-dialog">
+    <form method="dialog" id="start-form">
+      <h3>Terminfindung starten</h3>
+      <label>Anlass<input id="f-desc" placeholder="z. B. Spieleabend" /></label>
+      <label>Von<input id="f-start" type="date" required /></label>
+      <label>Bis<input id="f-end" type="date" required /></label>
+      <label>Granularität
+        <select id="f-gran">
+          <option value="evening">Abende (1 Slot/Tag)</option>
+          <option value="halfday">Halbtage (2 Slots/Tag)</option>
+        </select>
+      </label>
+      <menu>
+        <button value="cancel" class="secondary">Abbrechen</button>
+        <button id="f-go" value="ok">Starten</button>
+      </menu>
+    </form>
+  </dialog>
+</div>
+<script src="static/app.js"></script>

@@ -1,0 +1,15 @@
+{
+    "recommendations": [
+        "continue.continue",
+        "saoudrizwan.claude-dev",
+        "ms-vscode.vscode-json",
+        "redhat.vscode-yaml",
+        "ms-python.python",
+        "ms-vscode.vscode-typescript-next",
+        "bradlc.vscode-tailwindcss",
+        "esbenp.prettier-vscode",
+        "ms-vscode.vscode-eslint",
+        "anthropic.claude-code",
+        "openai.chatgpt"
+    ]
+}

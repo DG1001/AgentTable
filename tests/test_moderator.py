@@ -1,0 +1,98 @@
+"""Integration tests for the task state machine + moderator loop (spec §6).
+
+No network: the LLM is a scripted mock, availability is written directly, and we
+assert the deterministic transitions collecting -> negotiating -> decided and the
+no-intersection fallback collecting <- negotiating.
+"""
+from app import repo
+from app.llm.client import LLMResponse
+from app.moderator import check_and_advance, start_task
+from app.service import bootstrap_group
+
+PARAMS = {"description": "Spieleabend", "range_start": "2026-07-20",
+          "range_end": "2026-07-27", "granularity": "evening"}
+
+
+def router(role, messages, tools, response_format):
+    system = messages[0]["content"] if messages else ""
+    if response_format and response_format.get("type") == "json_object":
+        if "next_speaker" in system:
+            return LLMResponse(content='{"next_speaker": "END_ROUND", "progress": false, "reason": "fertig"}')
+        if "candidate_index" in system:
+            return LLMResponse(content='{"candidate_index": 1, "location": "Café Central", "summary": "passt allen"}')
+    return LLMResponse(content="Alles klar, los geht's.")
+
+
+def _set_ready(group_id, task_id, slot):
+    for a in repo.list_person_agents(group_id):
+        repo.replace_availability(a["user_id"], [
+            {"start": slot[0], "end": slot[1], "preference": "yes"}
+        ])
+        repo.set_agent_state(a["id"], f"ready:{task_id}", True)
+
+
+async def test_full_flow_reaches_decided(db, mock_llm):
+    mock_llm.router = router
+    group_id, _ = bootstrap_group("Runde", ["Alex", "Bea", "Chris"])
+
+    task = await start_task(group_id, PARAMS)
+    assert task["status"] == "collecting"
+
+    _set_ready(group_id, task["id"], ("2026-07-21T18:00", "2026-07-21T22:00"))
+    await check_and_advance(task["id"])
+
+    final = repo.get_task(task["id"])
+    assert final["status"] == "decided"
+    import json
+    result = json.loads(final["result_json"])
+    assert result["slot"]["start"] == "2026-07-21T18:00"
+    assert result["location"] == "Café Central"
+
+    # announcement + candidate table + result all landed in the room
+    room = repo.list_room_messages(group_id)
+    assert len(room) >= 3
+
+
+async def test_no_intersection_goes_back_to_collecting(db, mock_llm):
+    mock_llm.router = router
+    group_id, _ = bootstrap_group("Runde", ["Alex", "Bea"])
+    task = await start_task(group_id, PARAMS)
+
+    persons = repo.list_person_agents(group_id)
+    # disjoint availability -> no common slot
+    repo.replace_availability(persons[0]["user_id"],
+                              [{"start": "2026-07-21T18:00", "end": "2026-07-21T22:00", "preference": "yes"}])
+    repo.replace_availability(persons[1]["user_id"],
+                              [{"start": "2026-07-23T18:00", "end": "2026-07-23T22:00", "preference": "yes"}])
+    for a in persons:
+        repo.set_agent_state(a["id"], f"ready:{task['id']}", True)
+
+    await check_and_advance(task["id"])
+
+    back = repo.get_task(task["id"])
+    assert back["status"] == "collecting"
+    assert back["iteration"] == 1
+
+
+async def test_second_no_intersection_fails(db, mock_llm):
+    mock_llm.router = router
+    group_id, _ = bootstrap_group("Runde", ["Alex", "Bea"])
+    task = await start_task(group_id, PARAMS)
+    persons = repo.list_person_agents(group_id)
+
+    def disjoint():
+        repo.replace_availability(persons[0]["user_id"],
+                                  [{"start": "2026-07-21T18:00", "end": "2026-07-21T22:00", "preference": "yes"}])
+        repo.replace_availability(persons[1]["user_id"],
+                                  [{"start": "2026-07-23T18:00", "end": "2026-07-23T22:00", "preference": "yes"}])
+        for a in persons:
+            repo.set_agent_state(a["id"], f"ready:{task['id']}", True)
+
+    disjoint()
+    await check_and_advance(task["id"])  # iteration 1, back to collecting
+    disjoint()
+    await check_and_advance(task["id"])  # iteration 2, back to collecting
+    disjoint()
+    await check_and_advance(task["id"])  # exceeds max -> failed
+
+    assert repo.get_task(task["id"])["status"] == "failed"

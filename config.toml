@@ -1,0 +1,26 @@
+# AgentTable — static configuration.
+# Values here are defaults; anything in .env / the environment overrides them.
+# Kept intentionally small — secrets belong in .env, not here.
+
+[app]
+title = "AgentTable"
+# Slot granularity for scheduling. One of: "evening" | "halfday".
+# "evening"  -> one slot per day (the evening).
+# "halfday"  -> two slots per day (morning / afternoon-evening).
+slot_granularity = "evening"
+# Collecting-phase timeout in hours: after this, proceed with whatever data exists.
+collecting_timeout_hours = 72
+# Max negotiation messages per room round (moderator hard guard, spec §5.2).
+max_messages_per_round = 20
+# How many candidate slots the scheduler surfaces.
+candidate_count = 5
+# Max collecting<->negotiating re-iterations before failing (spec §6).
+max_reschedule_iterations = 2
+
+[llm]
+# Default temperature per role can be tuned here; env still wins.
+person_temperature = 0.7
+admin_temperature = 0.4
+search_temperature = 0.3
+request_timeout_s = 60
+max_retries = 3
