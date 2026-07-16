@@ -32,6 +32,19 @@ header h1 { font-size: 1.4rem; margin: 0; }
 .msg.system { align-self: center; background: transparent; color: var(--system); font-size: 0.8rem; font-style: italic; }
 .msg .who { font-size: 0.72rem; font-weight: 600; opacity: 0.8; margin-bottom: 2px; }
 
+/* source citations rendered as small clickable chips */
+.msg a.src {
+  display: inline-flex; align-items: center; gap: 3px;
+  background: rgba(61, 139, 219, 0.12); color: var(--accent);
+  padding: 1px 8px 1px 6px; border-radius: 11px;
+  font-size: 0.8rem; text-decoration: none; line-height: 1.6;
+  margin: 1px 1px; vertical-align: baseline; white-space: nowrap;
+  max-width: 220px; overflow: hidden; text-overflow: ellipsis;
+}
+.msg a.src::before { content: "🔗"; font-size: 0.7em; }
+.msg a.src:hover { background: rgba(61, 139, 219, 0.22); text-decoration: none; }
+.msg.user a.src { background: rgba(255, 255, 255, 0.22); color: #fff; }
+
 .room .msg.agent { border-left: 3px solid var(--who, #ccc); }
 .room table { border-collapse: collapse; font-size: 0.82rem; margin-top: 4px; }
 .room th, .room td { border: 1px solid var(--border); padding: 2px 6px; }

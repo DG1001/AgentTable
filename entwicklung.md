@@ -12,6 +12,19 @@
 
 ---
 
+## 2026-07-16 — UI: Quellen als klickbare Chips rendern
+
+Nutzerwunsch: die Recherche-Quellen schicker darstellen. Der Mini-Markdown-Renderer
+konnte noch keine Links → `[text](url)` erschien als Rohtext.
+
+- `inline()` in `app.js`: Markdown-Links werden erkannt und als klickbare
+  **🔗-Chips** (`a.src`, `target=_blank`) gerendert. Links werden vor Bold/Italic
+  über **Private-Use-Platzhalter** ausgelagert (URLs mit `_`/`*` bleiben heil);
+  Platzhalter mit `…` statt Ziffern, damit echte Zahlen (z. B. „9.2")
+  nicht getroffen werden.
+- CSS: dezente Chip-Optik (`.msg a.src`), passend auch auf User-Blasen.
+- Visuell mit Playwright verifiziert (Quellen-Zeile als Chips, „9.2" intakt).
+
 ## 2026-07-16 — Suche: Tavily als Primär-Provider + Auto-Fallback auf SearXNG
 
 Nutzerwunsch: auf Tavily umstellen, bei erreichtem Tavily-Limit automatisch auf

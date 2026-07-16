@@ -24,10 +24,24 @@ function renderMarkdown(text) {
   }
   return html.replace(/(<br\/>)+$/, "");
 }
+function escAttr(s) {
+  return esc(s).replace(/"/g, "&quot;");
+}
 function inline(s) {
-  return esc(s)
+  // Extract markdown links first (their URLs may contain * or _), stash behind
+  // private-use placeholders, run bold/italic on the rest, then restore them.
+  const links = [];
+  s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, (_m, text, url) => {
+    const host = url.replace(/^https?:\/\/(www\.)?/, "").split("/")[0];
+    links.push(
+      `<a class="src" href="${escAttr(url)}" target="_blank" rel="noopener noreferrer" title="${escAttr(url)}">${esc(text) || esc(host)}</a>`
+    );
+    return `\uE000${links.length - 1}\uE001`;
+  });
+  s = esc(s)
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/_(.+?)_/g, "<em>$1</em>");
+  return s.replace(/\uE000(\d+)\uE001/g, (_m, i) => links[+i]);
 }
 function renderTable(rows) {
   const cells = (r) => r.split("|").map((c) => c.trim()).filter((c, idx, a) => !(idx === 0 && c === "") && !(idx === a.length - 1 && c === ""));

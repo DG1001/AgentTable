@@ -190,8 +190,9 @@ Optionaler `BASE_PATH` mountet die App unter einem Sub-Pfad (nginx).
 
 Vanilla JS, kein Build. Zwei-Spalten-Layout: links Privatchat, rechts Task-Panel
 + Gruppenraum + 8-Bit-Tischansicht. Mini-Markdown-Renderer (Bold/Italic/Pipe-
-Tabellen) für die Kandidatentabelle. Reconnutende WebSockets. Agentenfarben aus
-dem Backend.
+Tabellen **und Links** `[text](url)` → klickbare Quellen-Chips mit 🔗) für
+Kandidatentabelle und Recherche-Quellen. Reconnutende WebSockets. Agentenfarben
+aus dem Backend.
 
 - `app.js` — Boot, REST-Load, WebSockets, Chat-Composer, Start-Dialog.
 - `viz.js` — **8-Bit-Visualisierung (Phase 4)**, gekapselt als `AgentViz`
