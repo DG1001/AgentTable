@@ -8,7 +8,20 @@ const AgentViz = (() => {
   let canvas, ctx, dpr = 1;
   let agents = [];
   const lastSpoke = {}; // agent_id -> performance.now() timestamp
+  const blinkSched = {}; // agent_id -> {until, next} for irregular, per-sprite blinking
   let running = false;
+
+  // Each sprite blinks on its own randomised schedule (not a linear wave).
+  function eyesClosed(key, now) {
+    let b = blinkSched[key];
+    if (!b) { b = blinkSched[key] = { until: 0, next: now + Math.random() * 4000 }; }
+    if (now >= b.next) {
+      b.until = now + 100 + Math.random() * 70;          // blink lasts ~100-170ms
+      b.next = now + 2200 + Math.random() * 4200;         // next blink in ~2.2-6.4s
+      if (Math.random() < 0.15) b.next = now + 220;       // occasional double-blink
+    }
+    return now < b.until;
+  }
 
   // --- colour helpers -----------------------------------------------------
   function shade(hex, amt) {
@@ -63,8 +76,8 @@ const AgentViz = (() => {
     blk(5, 7, 2, 1, shade(skin, -25));
     blk(3, 2, 6, 5, skin);
 
-    // eyes (with occasional blink)
-    const blink = (now + seed * 700) % 3200 < 130;
+    // eyes (with irregular, per-sprite blink)
+    const blink = eyesClosed(agent.id != null ? agent.id : seed, now);
     if (blink) {
       blk(4, 4, 1, 1, skin); blk(7, 4, 1, 1, skin);
     } else {
