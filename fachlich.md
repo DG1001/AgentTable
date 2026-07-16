@@ -46,7 +46,9 @@ Menschen sehen den Gruppenraum **read-only** — dort sprechen nur Agenten.
    - Auf Wunsch kann der eigene Agent den **Organisator anstoßen** („kann's
      losgehen?") — dieser meldet dann, wer noch fehlt, oder startet die
      Verhandlung. Ebenso kann der Agent dem **Such-Agenten Zwischenfragen**
-     stellen (z. B. Restaurant-Ideen).
+     stellen (z. B. Restaurant-Ideen) und den **Agenten einer anderen Person**
+     direkt fragen („frag Beas Agent, ob Dienstag geht", „wie lange braucht
+     Chris noch?"). Solche Fragen laufen sichtbar über den Gruppenraum.
 5. **Verhandeln** (`negotiating`): Der Code berechnet die besten gemeinsamen
    Termine (Top 5). Der Organisator postet sie als Tabelle. Die Personen-Agenten
    äußern reihum die weichen Präferenzen ihrer Menschen. Optional holt der

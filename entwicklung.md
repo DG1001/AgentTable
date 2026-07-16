@@ -12,6 +12,24 @@
 
 ---
 
+## 2026-07-16 — Nutzer-Feedback: Agent kann andere Personen-Agenten fragen
+
+Wunsch: Der eigene Agent soll auf Bitte hin den Agenten einer *anderen* Person
+direkt fragen können (z. B. „frag Beas Agent, ob Dienstag geht", „wie lange
+braucht Chris noch?").
+
+Umgesetzt:
+- **Neues Tool `ask_agent(agent_name, question)`**: löst das Ziel per Agenten-
+  oder Personen-Name auf (`_resolve_person_agent`, fuzzy), postet die Frage im
+  Raum (Asker) und **eine** Antwort des Ziel-Agenten (`person.answer_question`,
+  gestützt auf dessen gespeicherte Verfügbarkeiten/Persona, keine erfundenen
+  Zusagen). Antwort wird dem fragenden User privat weitergegeben.
+- Prompt `person_answer.md` (knappe, ehrliche Antwort), `person_private.md` ergänzt.
+- Tests: Zielauflösung + Q&A im Raum, unbekanntes Ziel (22 grün).
+- **Entscheidung / Leitplanke (§10):** Bewusst **eine** user-getriggerte Frage →
+  **eine** Antwort, sichtbar im Raum, aufs Task-Budget gezählt. Kein autonomes,
+  gegenseitiges Agenten-Triggern → kein ungedrosselter Loop.
+
 ## 2026-07-16 — Nutzer-Feedback: deterministischer „Bereit"-Button
 
 Beobachtung: Beim Versuch, „fertig" zu melden, blieb der User auf `ready=False`,

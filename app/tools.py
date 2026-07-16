@@ -97,6 +97,28 @@ TOOL_SCHEMAS: list[dict] = [
     {
         "type": "function",
         "function": {
+            "name": "ask_agent",
+            "description": (
+                "Stellt dem Agenten einer ANDEREN Person im Gruppenraum eine direkte Frage "
+                "(z. B. 'Kannst du am Dienstag?'). NUR auf Wunsch des Users. Gib den Namen "
+                "der Person oder ihres Agenten an (z. B. 'Bea' oder 'Beas Agent')."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "agent_name": {
+                        "type": "string",
+                        "description": "Name der Zielperson oder ihres Agenten.",
+                    },
+                    "question": {"type": "string", "description": "Die Frage, auf Deutsch."},
+                },
+                "required": ["agent_name", "question"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "ask_search",
             "description": (
                 "Stellt dem Such-Agenten im Gruppenraum eine konkrete Recherche-Frage "

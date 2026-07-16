@@ -139,7 +139,12 @@ Function-Calling-Schemas (deutsch beschrieben), Validierung strikt in Code:
   (`moderator.handle_admin_request`): Orga postet den Stand (wer fehlt) oder
   startet die Verhandlung. Frage + Antwort erscheinen im Raum.
 - `ask_search(query)` — stellt dem Such-Agenten auf Userwunsch eine Zwischenfrage;
-  Antwort im Raum + im Privatchat. Die beiden raumseitigen Tools werden in
+  Antwort im Raum + im Privatchat.
+- `ask_agent(agent_name, question)` — fragt auf Userwunsch den Agenten einer
+  anderen Person (Ziel per Name/Anzeigename aufgelöst); postet Frage + eine
+  gestützte Antwort (`person.answer_question`) im Raum. **Bewusst gedrosselt**:
+  eine Frage → eine Antwort, kein autonomer Agent-Loop (§10).
+- Die raumseitigen Tools (`ask_admin`/`ask_search`/`ask_agent`) werden in
   `person.py` async behandelt (nicht in `apply_tool_call`).
 
 ## 8. HTTP-/WS-API (`app/main.py`)

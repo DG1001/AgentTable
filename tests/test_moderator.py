@@ -74,6 +74,33 @@ async def test_admin_request_reports_missing(db, mock_llm):
     assert "Kann's losgehen?" in contents
 
 
+async def test_ask_agent_targets_other_and_posts_qa(db, mock_llm):
+    mock_llm.router = lambda role, m, t, rf: LLMResponse(content="Dienstag passt bei mir gut.")
+    from app.agents.person import _handle_room_tool
+    group_id, members = bootstrap_group("Runde", ["Alex", "Bea", "Chris"])
+    task = await start_task(group_id, PARAMS)
+    alex = repo.get_user(members[0]["user_id"])
+
+    # Alex's agent asks "Bea" (resolves by display name) a question
+    result = await _handle_room_tool(alex, task, "ask_agent",
+                                     {"agent_name": "Bea", "question": "Kannst du Dienstag?"})
+    assert "Beas Agent" in result and "Dienstag" in result
+
+    contents = [r["content"] for r in repo.list_room_messages(group_id)]
+    assert any("@Beas Agent: Kannst du Dienstag?" in c for c in contents)  # the question
+    assert any("Dienstag passt bei mir gut." in c for c in contents)       # the answer
+
+
+async def test_ask_agent_unknown_target(db, mock_llm):
+    from app.agents.person import _handle_room_tool
+    group_id, members = bootstrap_group("Runde", ["Alex", "Bea"])
+    task = await start_task(group_id, PARAMS)
+    alex = repo.get_user(members[0]["user_id"])
+    result = await _handle_room_tool(alex, task, "ask_agent",
+                                     {"agent_name": "Zaphod", "question": "hi?"})
+    assert "finde ich nicht" in result and "Beas Agent" in result
+
+
 async def test_no_intersection_goes_back_to_collecting(db, mock_llm):
     mock_llm.router = router
     group_id, _ = bootstrap_group("Runde", ["Alex", "Bea"])
