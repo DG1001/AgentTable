@@ -12,6 +12,24 @@
 
 ---
 
+## 2026-07-16 — Such-Agent: Wissens-Fallback bei blockierten Suchmaschinen
+
+Beobachtung: „Rechercheur findet nichts Brauchbares mehr." Diagnose (kein
+Code-Bug): SearXNGs Upstream-Engines waren durch das viele Testen alle
+rate-limited/geblockt (brave: too many requests, duckduckgo/startpage: CAPTCHA,
+google: access denied) → 0 Treffer.
+
+Umgesetzt:
+- `SearxngProvider` unterscheidet jetzt **echte Fehlanzeige** von **blockierten
+  Engines**: bei 0 Treffern + `unresponsive_engines` → `SearchUnavailable`.
+- Such-Agent hat einen **Wissens-Fallback** (`search_fallback.md`): wenn keine
+  Live-Treffer da sind (Provider fehlt / blockiert / leer), antwortet er aus
+  eigenem Kenntnisstand mit **klarem Hinweis „ohne aktuelle Web-Recherche"** und
+  ohne erfundene Detailfakten. So bleibt der Rechercheur nützlich.
+- **Entscheidung:** Nützlichkeit > Strenge — statt „nichts gefunden" lieber
+  plausible Vorschläge mit ehrlichem Disclaimer. Sobald die Engines wieder frei
+  sind, greift automatisch wieder die echte Web-Recherche.
+
 ## 2026-07-16 — Bugfix: „Phantom-Aktionen" (Agent behauptet Tool-Call, ohne ihn zu machen)
 
 Beobachtung: Chris' Agent sagte „ich hab den Rechercheur gefragt", aber es ging

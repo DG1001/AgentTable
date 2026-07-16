@@ -125,8 +125,13 @@ der DB → Wiederaufnahme nach Neustart möglich.
 
 `SearxngProvider` (Default in diesem Workspace) ruft den Container unter
 `SEARXNG_BASE_URL` auf: `GET {base}/search?q=<begriff>&format=json` und mappt
-`results[]` auf `SearchResult(title, url, snippet)`. Ohne erreichbaren Provider
-meldet sich der Such-Agent ehrlich als „nicht verfügbar".
+`results[]` auf `SearchResult(title, url, snippet)`. Bei 0 Treffern **mit**
+`unresponsive_engines` (Rate-Limit/CAPTCHA) wirft er `SearchUnavailable` —
+unterscheidet also echte Fehlanzeige von blockierten Engines.
+
+**Wissens-Fallback:** Liefert die Suche nichts (Provider fehlt/blockiert/leer),
+antwortet der Such-Agent aus eigenem Modellwissen mit klarem „ohne Live-Recherche"-
+Hinweis (`prompts/search_fallback.md`), statt nur „nichts gefunden" zu melden.
 
 ## 7b. Personen-Agent-Tools (`app/tools.py`)
 

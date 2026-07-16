@@ -14,6 +14,11 @@ import httpx
 from app.config import settings
 
 
+class SearchUnavailable(Exception):
+    """Raised when the provider is reachable but the upstream engines failed
+    (rate-limited / CAPTCHA), so zero results is a block, not a genuine miss."""
+
+
 @dataclass
 class SearchResult:
     title: str
@@ -68,6 +73,9 @@ class SearxngProvider:
             resp.raise_for_status()
             data = resp.json()
         results = data.get("results", [])[:max_results]
+        if not results and data.get("unresponsive_engines"):
+            reasons = ", ".join(f"{e[0]}: {e[1]}" for e in data["unresponsive_engines"][:4])
+            raise SearchUnavailable(reasons)
         return [
             SearchResult(r.get("title", ""), r.get("url", ""), r.get("content", ""))
             for r in results
