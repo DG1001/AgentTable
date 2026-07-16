@@ -216,7 +216,7 @@ bis `failed`.
 | `LLM_{PERSON,ADMIN,SEARCH}_MODEL` | (Fallback auf `LLM_MODEL`) | Rollen-Override |
 | `SEARCH_PROVIDER` | `searxng` | `tavily` / `searxng` / `none` |
 | `SEARXNG_BASE_URL` | `http://searxng:8080` | SearXNG-Container (JSON: `/search?q=…&format=json`) |
-| `TASK_LLM_BUDGET` | 60 | harte Call-Obergrenze pro Task |
+| `TASK_LLM_BUDGET` | 200 | Call-Obergrenze pro Verhandlung (Runaway-Backstop, keine Kostenbremse) |
 | `DB_PATH` | `data/agenttable.db` | SQLite-Datei |
 | `BASE_PATH` | (leer) | Sub-Pfad hinter Proxy |
 | `config.toml [app]` | `slot_granularity`, `collecting_timeout_hours`, `max_messages_per_round`, `candidate_count`, `max_reschedule_iterations` | Ablauf-Parameter |

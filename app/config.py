@@ -99,7 +99,7 @@ def _load() -> Settings:
         title=app["title"],
         base_path=_env("BASE_PATH", "").rstrip("/"),
         db_path=db_path,
-        task_llm_budget=int(_env("TASK_LLM_BUDGET", "60")),
+        task_llm_budget=int(_env("TASK_LLM_BUDGET", "200")),
         timezone=_env("APP_TIMEZONE", "Europe/Berlin"),
         slot_granularity=app["slot_granularity"],
         collecting_timeout_hours=int(app["collecting_timeout_hours"]),

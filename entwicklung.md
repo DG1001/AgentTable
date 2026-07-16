@@ -12,6 +12,14 @@
 
 ---
 
+## 2026-07-16 — Budget-Default angehoben (60 → 200)
+
+Nutzerhinweis: bisher ~1 Cent verbraucht — Kosten sind kein Thema. Das Budget ist
+damit primär ein Runaway-Loop-Backstop, keine Kostenbremse. Default von 60 auf
+**200** pro Verhandlung angehoben (`config.py`, `.env.example`), damit es im
+Normalbetrieb nie stört; die Loop-Guards (max-Messages, 2×kein-Fortschritt) bleiben
+die eigentliche Bremse.
+
 ## 2026-07-16 — Bugfix: Budget nur auf die Verhandlungsphase anwenden
 
 Beobachtung: „Der Organisator hängt." Diagnose: (a) Chris war noch nicht `ready`
