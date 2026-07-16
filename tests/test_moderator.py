@@ -74,6 +74,23 @@ async def test_admin_request_reports_missing(db, mock_llm):
     assert "Kann's losgehen?" in contents
 
 
+async def test_budget_scoped_to_negotiation(db, mock_llm):
+    """Heavy collecting-phase usage (ask_* chatter) must NOT block negotiation —
+    the budget only counts calls made after negotiation starts."""
+    mock_llm.router = router
+    from app.config import settings
+    group_id, _ = bootstrap_group("Runde", ["Alex", "Bea"])
+    task = await start_task(group_id, PARAMS)
+    _set_ready(group_id, task["id"], ("2026-07-21T18:00", "2026-07-21T22:00"))
+
+    # simulate lots of collecting-phase calls (over the whole budget)
+    for _ in range(settings.task_llm_budget + 20):
+        repo.log_usage("person", "mock", 1, 1, group_id=group_id, task_id=task["id"])
+
+    await check_and_advance(task["id"])
+    assert repo.get_task(task["id"])["status"] == "decided"
+
+
 async def test_ask_agent_targets_other_and_posts_qa(db, mock_llm):
     mock_llm.router = lambda role, m, t, rf: LLMResponse(content="Dienstag passt bei mir gut.")
     from app.agents.person import _handle_room_tool

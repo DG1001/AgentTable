@@ -12,6 +12,23 @@
 
 ---
 
+## 2026-07-16 — Bugfix: Budget nur auf die Verhandlungsphase anwenden
+
+Beobachtung: „Der Organisator hängt." Diagnose: (a) Chris war noch nicht `ready`
+(Orga wartete korrekt), und (b) der Task hatte durch die vielen `ask_*`-Gespräche
+in der Sammelphase bereits **85 LLM-Calls** verbraucht — **Budget 60**. Sobald
+die Verhandlung startet, hätte `budget_ok` sofort `False` geliefert und die
+Verhandlung **pausiert, bevor ein Vorschlag entsteht** → der eigentliche Hänger.
+
+Fix:
+- `budget_ok` zählt jetzt nur Calls **seit Verhandlungsstart** dieses Versuchs
+  (`neg_base:<task_id>`, in `run_negotiation` gesetzt). Das Budget schützt damit
+  gezielt den **autonomen Moderator-Loop** (§10-Absicht), nicht die
+  user-getriebenen Anfragen (Onboarding, ask_admin/ask_agent/ask_search).
+- **Grund:** Eine gesprächige Sammelphase darf das Verhandlungsbudget nicht
+  aufbrauchen; sonst blockiert genau das Feature (Agenten-Fragen) den Abschluss.
+- Test: Heavy Collecting-Usage > Budget → Verhandlung erreicht trotzdem `decided`.
+
 ## 2026-07-16 — Nutzer-Feedback: Agent kann andere Personen-Agenten fragen
 
 Wunsch: Der eigene Agent soll auf Bitte hin den Agenten einer *anderen* Person

@@ -90,7 +90,10 @@ collecting ──(alle ready | Timeout)──► negotiating ──► decided
 ```
 
 **Harte Guards im Code (spec §5.2, §10):**
-- Budget pro Task (`budget_ok`) → bei Überschreitung `_pause_over_budget`.
+- Budget pro Verhandlung (`budget_ok`) → bei Überschreitung `_pause_over_budget`.
+  Gezählt werden nur Calls **seit Verhandlungsstart** (`neg_base:<task_id>`),
+  damit die user-getriebene Sammelphase (Onboarding, ask_*) das autonome
+  Verhandlungsbudget nicht aufbraucht.
 - `max_messages_per_round` begrenzt eine Verhandlungsrunde.
 - Kein Agent zweimal direkt hintereinander (`_pick_fallback`).
 - Zwei aufeinanderfolgende `progress=false` → Runde endet.

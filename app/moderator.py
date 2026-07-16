@@ -58,8 +58,16 @@ async def notify_user_private(user_id: int, text: str) -> None:
 
 
 # --- budget guard ---------------------------------------------------------
+# The budget guards the AUTONOMOUS negotiation loop (spec §10), not the
+# user-driven collecting phase (onboarding, ask_admin/ask_agent/ask_search).
+# So we count only the calls made since negotiation started for this attempt.
+def _neg_baseline(task) -> int:
+    admin = repo.get_agent_by_kind(task["group_id"], "admin")
+    return int(repo.get_agent_state(admin["id"], f"neg_base:{task['id']}", 0))
+
+
 def budget_ok(task) -> bool:
-    used = repo.count_task_calls(task["id"])
+    used = repo.count_task_calls(task["id"]) - _neg_baseline(task)
     return used < settings.task_llm_budget
 
 
@@ -215,6 +223,8 @@ async def run_negotiation(task_id: int) -> None:
         return
     group_id = task["group_id"]
     admin = repo.get_agent_by_kind(group_id, "admin")
+    # anchor the budget window to the start of THIS negotiation attempt
+    repo.set_agent_state(admin["id"], f"neg_base:{task['id']}", repo.count_task_calls(task["id"]))
 
     availability = repo.list_group_availability(group_id)
     candidates = compute_candidates(
