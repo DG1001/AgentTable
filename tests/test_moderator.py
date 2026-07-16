@@ -53,6 +53,27 @@ async def test_full_flow_reaches_decided(db, mock_llm):
     assert len(room) >= 3
 
 
+async def test_admin_request_reports_missing(db, mock_llm):
+    mock_llm.router = router
+    from app.moderator import handle_admin_request
+    group_id, members = bootstrap_group("Runde", ["Alex", "Bea", "Chris"])
+    task = await start_task(group_id, PARAMS)
+
+    # only Bea is ready
+    persons = repo.list_person_agents(group_id)
+    repo.replace_availability(persons[1]["user_id"],
+                              [{"start": "2026-07-21T18:00", "end": "2026-07-21T22:00", "preference": "yes"}])
+    repo.set_agent_state(persons[1]["id"], f"ready:{task['id']}", True)
+
+    alex = repo.get_user(members[0]["user_id"])
+    msg = await handle_admin_request(alex, task, "Kann's losgehen?")
+    assert "warte noch auf" in msg
+    assert "Alex" in msg and "Chris" in msg and "Bea" not in msg
+    # the person's request and the admin reply both landed in the room
+    contents = [r["content"] for r in repo.list_room_messages(group_id)]
+    assert "Kann's losgehen?" in contents
+
+
 async def test_no_intersection_goes_back_to_collecting(db, mock_llm):
     mock_llm.router = router
     group_id, _ = bootstrap_group("Runde", ["Alex", "Bea"])

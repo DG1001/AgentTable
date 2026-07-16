@@ -121,11 +121,15 @@ async def handle_private_message(user_id: int, text: str) -> list[dict]:
                 ],
             })
             for tc in resp.tool_calls:
-                result = apply_tool_call(user_id, tc.name, tc.arguments, params)
-                if result.triggered_ready:
-                    ready_triggered = True
+                if tc.name in ("ask_admin", "ask_search"):
+                    tool_msg = await _handle_room_tool(user, task, tc.name, tc.arguments)
+                else:
+                    result = apply_tool_call(user_id, tc.name, tc.arguments, params)
+                    if result.triggered_ready:
+                        ready_triggered = True
+                    tool_msg = result.message
                 messages.append({
-                    "role": "tool", "tool_call_id": tc.id, "content": result.message,
+                    "role": "tool", "tool_call_id": tc.id, "content": tool_msg,
                 })
             continue
         if resp.content.strip():
@@ -137,6 +141,36 @@ async def handle_private_message(user_id: int, text: str) -> list[dict]:
         repo.set_agent_state(agent["id"], f"ready:{task['id']}", True)
 
     return emitted
+
+
+async def _handle_room_tool(user, task, name: str, args: dict) -> str:
+    """Handle the two room-facing person tools (ask_admin / ask_search).
+
+    Both post into the group room (so everyone sees it and the sprite speaks) and
+    return a short text the person-agent relays to its user in the private chat.
+    Imported lazily to avoid a person<->moderator import cycle.
+    """
+    from app import moderator
+    from app.agents import search as search_agent
+
+    if name == "ask_admin":
+        return await moderator.handle_admin_request(user, task, (args.get("request") or "").strip())
+
+    # ask_search
+    query = (args.get("query") or "").strip()
+    if not query:
+        return "Leere Suchanfrage — ich brauche eine konkrete Frage."
+    group_id = user["group_id"]
+    search = repo.get_agent_by_kind(group_id, "search")
+    person_agent = repo.get_person_agent(user["id"])
+    await moderator.post_room(
+        group_id, f"Zwischenfrage an den Rechercheur: {query}", agent_id=person_agent["id"]
+    )
+    answer = await search_agent.speak_in_room(
+        search, query, group_id, task["id"] if task else None
+    )
+    await moderator.post_room(group_id, answer, agent_id=search["id"])
+    return answer
 
 
 async def speak_in_room(agent, task, candidates_md: str, db=None) -> str:

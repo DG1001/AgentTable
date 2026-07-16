@@ -54,10 +54,17 @@ def test_set_availability_replaces(db):
     assert len(rows) == 1 and rows[0]["slot_start"] == "2026-07-22T18:00"
 
 
-def test_mark_ready(db):
+def test_mark_ready_requires_availability(db):
     uid = _user(db)
+    # no slots yet -> refused
     res = apply_tool_call(uid, "mark_ready", {}, PARAMS)
-    assert res.ok and res.triggered_ready
+    assert not res.ok and not res.triggered_ready
+    # after providing a slot -> allowed
+    apply_tool_call(uid, "set_availability", {
+        "slots": [{"start": "2026-07-21T18:00", "end": "2026-07-21T22:00", "preference": "yes"}]
+    }, PARAMS)
+    res2 = apply_tool_call(uid, "mark_ready", {}, PARAMS)
+    assert res2.ok and res2.triggered_ready
 
 
 def test_slots_snapped_to_grid(db):

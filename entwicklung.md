@@ -12,6 +12,31 @@
 
 ---
 
+## 2026-07-16 — Nutzer-Feedback: Agent kann Orga/Such-Agent ansprechen + mark_ready-Guard
+
+Beobachtung aus erstem echten Test: „Der Orga läuft nicht an." Diagnose über
+DB-Zustand: Der initiierende User (Alex) hatte **0 Verfügbarkeiten**, war aber als
+`ready` markiert. Der Orga lief dadurch an, fand **keine Schnittmenge für alle**,
+postete „Kein Termin passt für alle" und **setzte alle auf nicht-bereit zurück**
+(iteration→1). Der User übersah das und bekam vom Privatchat den (nicht
+umsetzbaren) Rat, „den Organisator direkt zu fragen".
+
+Umgesetzt:
+- **Neues Tool `ask_admin(request)`** (Personen-Agent): stößt auf Userwunsch den
+  Organisator im Raum an. Der Orga meldet den echten Stand zurück — inkl. **wer
+  noch fehlt** („Ich warte noch auf: Alex") — oder startet, wenn alle bereit sind.
+  → `moderator.handle_admin_request(...)`.
+- **Neues Tool `ask_search(query)`** (Personen-Agent): stellt dem Such-Agenten auf
+  Userwunsch eine Zwischenfrage; Frage + Antwort landen im Raum, Antwort wird dem
+  User im Privatchat weitergegeben. `search.speak_in_room(...)` nimmt jetzt
+  `group_id`/`task_id` statt eines vollen Task-Objekts (auch ohne aktiven Task nutzbar).
+- **`mark_ready`-Guard:** verweigert „bereit", solange der User keinen einzigen
+  Slot genannt hat. **Grund:** „ready" ohne Verfügbarkeit führt garantiert zum
+  No-Intersection-Reset, der alle anderen mitreißt — genau der beobachtete Bug.
+- Prompt `person_private.md` geschärft (sofort `set_availability`, `mark_ready`
+  erst nach Slots, neue Tools nur auf Userwunsch).
+- Tests: mark_ready-Guard + `handle_admin_request`-Statusmeldung (20 grün).
+
 ## 2026-07-16 — Phase 4: 8-Bit-Visualisierung
 
 - `frontend/viz.js` (`AgentViz`): Canvas-2D-Szene mit einem prozeduralen

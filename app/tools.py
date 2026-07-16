@@ -65,8 +65,53 @@ TOOL_SCHEMAS: list[dict] = [
         "type": "function",
         "function": {
             "name": "mark_ready",
-            "description": "Signalisiert, dass der User mit der Verfügbarkeitsangabe fertig ist.",
+            "description": (
+                "Signalisiert, dass der User mit der Verfügbarkeitsangabe fertig ist. "
+                "NUR aufrufen, nachdem via set_availability mindestens ein Termin "
+                "gespeichert wurde (oder der User ausdrücklich sagt, er sei völlig flexibel)."
+            ),
             "parameters": {"type": "object", "properties": {}},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "ask_admin",
+            "description": (
+                "Wendet sich im Namen des Users an den Organisator-Agenten im Gruppenraum "
+                "— z. B. um die Terminplanung anzustoßen oder nach dem Stand zu fragen. "
+                "NUR aufrufen, wenn der User darum bittet ('frag den Orga', 'kann's losgehen?')."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "request": {
+                        "type": "string",
+                        "description": "Kurze Bitte/Frage an den Organisator, auf Deutsch.",
+                    }
+                },
+                "required": ["request"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "ask_search",
+            "description": (
+                "Stellt dem Such-Agenten im Gruppenraum eine konkrete Recherche-Frage "
+                "(z. B. Location-/Restaurant-Vorschläge). NUR auf Wunsch des Users aufrufen."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Die Rechercheanfrage, auf Deutsch, möglichst konkret.",
+                    }
+                },
+                "required": ["query"],
+            },
         },
     },
 ]
@@ -172,6 +217,14 @@ def apply_tool_call(
         return ToolResult(True, f"Notiz gespeichert: {text}")
 
     if name == "mark_ready":
+        # Guard: readiness without any availability guarantees a failed
+        # intersection and resets everyone — refuse and ask for slots first.
+        if not repo.list_availability(user_id, db=db):
+            return ToolResult(
+                False,
+                "Du hast mir noch keine möglichen Termine genannt. Sag mir zuerst, "
+                "wann du kannst (mindestens ein Abend) — dann melde ich dich als bereit.",
+            )
         return ToolResult(True, "Als bereit markiert.", triggered_ready=True)
 
     return ToolResult(False, f"Unbekanntes Tool: {name}")

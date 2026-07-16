@@ -14,6 +14,7 @@ can replay and the state machine can resume (§10 robustness).
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from datetime import datetime, timedelta
@@ -103,6 +104,49 @@ async def start_task(group_id: int, params: dict) -> dict:
     await broadcast_task(task)
     log.info("task %s started for group %s params=%s", task_id, group_id, params)
     return task
+
+
+async def handle_admin_request(user, task, request_text: str) -> str:
+    """A person-agent nudges the organizer on the user's behalf (spec follow-up).
+
+    The person's request is voiced in the room; the admin answers with the real
+    status (who is still missing) and, if everyone is ready, kicks off the
+    negotiation. Returns a short German text the person-agent relays to the user.
+    """
+    group_id = user["group_id"]
+    admin = repo.get_agent_by_kind(group_id, "admin")
+    person_agent = repo.get_person_agent(user["id"])
+    if request_text:
+        await post_room(group_id, request_text, agent_id=person_agent["id"])
+
+    if task is None:
+        msg = ("Aktuell läuft keine Terminfindung. Eine Person kann oben über den "
+               "Button 'Terminfindung' eine starten.")
+        await post_room(group_id, msg, agent_id=admin["id"])
+        return msg
+
+    task = repo.get_task(task["id"])
+    status = task["status"]
+    if status == "collecting":
+        persons = repo.list_person_agents(group_id)
+        missing = [repo.get_user(a["user_id"])["display_name"]
+                   for a in persons if not person.is_ready(a, task)]
+        if missing:
+            msg = (f"Ich kann noch nicht starten — ich warte noch auf: "
+                   f"{', '.join(missing)}. Sobald alle fertig sind, geht's los.")
+            await post_room(group_id, msg, agent_id=admin["id"])
+            return msg
+        msg = "Alle sind bereit — ich starte jetzt die Terminplanung! 🗓️"
+        await post_room(group_id, msg, agent_id=admin["id"])
+        asyncio.create_task(check_and_advance(task["id"]))
+        return msg
+    if status == "negotiating":
+        msg = "Die Verhandlung läuft bereits — ich melde mich mit dem Ergebnis."
+        await post_room(group_id, msg, agent_id=admin["id"])
+        return msg
+    msg = "Die Terminfindung ist bereits abgeschlossen. Schau ins Ergebnis oben. 🙂"
+    await post_room(group_id, msg, agent_id=admin["id"])
+    return msg
 
 
 def _collecting_timed_out(task) -> bool:
@@ -258,7 +302,8 @@ async def _run_room_round(task, candidates, table: str) -> None:
         if agent["kind"] == "search":
             fav = candidates[0].label() if candidates else ""
             content = await search_agent.speak_in_room(
-                agent, task, f"Location-Vorschläge für ein Gruppentreffen am {fav}"
+                agent, f"Location-Vorschläge für ein Gruppentreffen am {fav}",
+                task["group_id"], task["id"],
             )
         else:
             content = await person.speak_in_room(agent, task, table)

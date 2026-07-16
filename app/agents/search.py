@@ -9,8 +9,11 @@ from app.prompts import render
 from app.search_provider import get_provider
 
 
-async def speak_in_room(agent, task, query_context: str, db=None) -> str:
-    """Run a web search for ``query_context`` and summarise it into the room."""
+async def speak_in_room(agent, query_context: str, group_id: int, task_id: int | None = None, db=None) -> str:
+    """Run a web search for ``query_context`` and summarise it into the room.
+
+    Usable both inside the moderator loop (task known) and for a person-agent's
+    ad-hoc question during collecting (``task_id`` may be None)."""
     provider = get_provider()
     if not provider.available:
         return ("Ich kann gerade nicht im Web suchen — es ist kein Such-Provider "
@@ -29,6 +32,6 @@ async def speak_in_room(agent, task, query_context: str, db=None) -> str:
         get_client("search"),
         [{"role": "system", "content": system},
          {"role": "user", "content": "Fasse die Ergebnisse kompakt zusammen."}],
-        group_id=task["group_id"], task_id=task["id"],
+        group_id=group_id, task_id=task_id,
     )
     return resp.content.strip()

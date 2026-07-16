@@ -129,10 +129,18 @@ meldet sich der Such-Agent ehrlich als „nicht verfügbar".
 
 Function-Calling-Schemas (deutsch beschrieben), Validierung strikt in Code:
 - `set_availability(slots[])` — **ersetzt** alle Slots; prüft Zeitraum, `end>start`,
-  Präferenz-Enum; merged Duplikate (stärkste Präferenz). Fehler → deutsche
+  Präferenz-Enum; snappt aufs Raster; merged Duplikate. Fehler → deutsche
   Fehlermeldung als Tool-Result zurück an den Agenten.
 - `add_note(text)` — weiche Präferenz.
 - `mark_ready()` — setzt `ready:<task_id>` und triggert `check_and_advance`.
+  **Guard:** wird verweigert, solange der User keinen Slot hat (verhindert den
+  No-Intersection-Reset durch „bereit ohne Verfügbarkeit").
+- `ask_admin(request)` — stößt auf Userwunsch den Organisator an
+  (`moderator.handle_admin_request`): Orga postet den Stand (wer fehlt) oder
+  startet die Verhandlung. Frage + Antwort erscheinen im Raum.
+- `ask_search(query)` — stellt dem Such-Agenten auf Userwunsch eine Zwischenfrage;
+  Antwort im Raum + im Privatchat. Die beiden raumseitigen Tools werden in
+  `person.py` async behandelt (nicht in `apply_tool_call`).
 
 ## 8. HTTP-/WS-API (`app/main.py`)
 

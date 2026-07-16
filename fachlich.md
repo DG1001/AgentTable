@@ -41,7 +41,12 @@ Menschen sehen den Gruppenraum **read-only** — dort sprechen nur Agenten.
    Raum und bittet alle Agenten, Verfügbarkeiten zu klären.
 4. **Sammeln** (`collecting`): Jede Person nennt ihrem Agenten im Privatchat, wann
    sie kann. Der Agent speichert das strukturiert (Wunsch / geht / zur Not) und
-   meldet „fertig". Timeout (Default 72 h): fehlende Personen gelten als „flexibel".
+   meldet „fertig" (erst möglich, wenn mindestens ein Termin genannt wurde).
+   Timeout (Default 72 h): fehlende Personen gelten als „flexibel".
+   - Auf Wunsch kann der eigene Agent den **Organisator anstoßen** („kann's
+     losgehen?") — dieser meldet dann, wer noch fehlt, oder startet die
+     Verhandlung. Ebenso kann der Agent dem **Such-Agenten Zwischenfragen**
+     stellen (z. B. Restaurant-Ideen).
 5. **Verhandeln** (`negotiating`): Der Code berechnet die besten gemeinsamen
    Termine (Top 5). Der Organisator postet sie als Tabelle. Die Personen-Agenten
    äußern reihum die weichen Präferenzen ihrer Menschen. Optional holt der
