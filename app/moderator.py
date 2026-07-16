@@ -269,9 +269,13 @@ async def _run_smalltalk(group_id: int, topic: str, initiator: str) -> None:
                 await asyncio.sleep(random.uniform(*_ST_PAUSE))
             speaker = _pick_smalltalk_speaker(persons, searcher, last_name, counts, turn)
             if speaker["kind"] == "search":
-                seed = (last_content or topic or "Alltag")[:80]
+                # Stay anchored to the TOPIC (with a varied angle); only fall back
+                # to the last message when there is no topic — otherwise the
+                # searcher drifts off onto a tangent's keywords.
+                angle = random.choice(["überraschender", "kurioser", "aktueller", "wenig bekannter"])
+                seed = topic or (last_content[:60] if last_content else "Alltag")
                 content = await search_agent.speak_in_room(
-                    speaker, f"überraschender oder lustiger Fakt zu: {seed}", group_id
+                    speaker, f"{angle} Fakt zum Thema {seed}", group_id
                 )
             else:
                 content = await _smalltalk_say(speaker, topic, group_id, research)

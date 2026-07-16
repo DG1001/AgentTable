@@ -63,6 +63,15 @@ Fixes:
 - Tool-Beschreibung + Prompt geschärft (nur auf ausdrücklichen Wunsch, nicht
   während Terminfindung). Test ergänzt (31 grün).
 
+## 2026-07-16 — Smalltalk: Zwischen-Recherche am Thema verankern
+
+Beobachtung: Bei einem Trump-Smalltalk brachte der Rechercheur mittendrin eine
+themenfremde Recherche (Werbung/Marketing). Ursache: Der Such-Seed war die letzte
+Nachricht (auf 80 Zeichen gekürzt) — driftete das Gespräch kurz ab, driftete die
+Suche mit. Fix: Bei gesetztem Thema ankert die Zwischen-Recherche am **Thema**
+(mit variierendem Adjektiv für Abwechslung); nur ohne Thema fällt sie auf die
+letzte Nachricht zurück. Real verifiziert (Thema Trump → Trump-Fakten).
+
 ## 2026-07-16 — Smalltalk: Web-Recherche-Opener zum Thema
 
 Wunsch: zu Beginn eine schnelle Web-Recherche zum Thema, damit aktuelle Dinge
