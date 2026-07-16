@@ -46,6 +46,16 @@ Umgesetzt:
 - End-to-End verifiziert (Playwright): verpasste Nachricht erscheint nach Resync
   genau einmal, zweiter Resync dupliziert nicht.
 
+## 2026-07-16 — Smalltalk: Web-Recherche-Opener zum Thema
+
+Wunsch: zu Beginn eine schnelle Web-Recherche zum Thema, damit aktuelle Dinge
+einfließen. Umgesetzt: Bei gesetztem Thema macht der Rechercheur ganz am Anfang
+eine Suche (`search_agent.speak_in_room`, via Tavily) und postet sie als Opener
+(„📚 Kurz vorab, was gerade zum Thema läuft: …", mit Quellen-Chips). Die
+Zusammenfassung wird zusätzlich als `research_line` in den `smalltalk_person`-Prompt
+gegeben, damit die Agenten aktuelle Bezüge einbauen. Real verifiziert (Thema
+„aktuelle KI-Entwicklungen" → echter aktueller Überblick, Agenten greifen es auf).
+
 ## 2026-07-16 — Smalltalk: zufällige Pausen zwischen Meldungen
 
 Wunsch: realistischer wirken lassen. Zwischen den Smalltalk-Meldungen jetzt eine

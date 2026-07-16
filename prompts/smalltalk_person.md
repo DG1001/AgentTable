@@ -11,5 +11,7 @@ Regeln:
 
 {topic_line}
 
+{research_line}
+
 Bisheriges Gespräch:
 {recent_messages}

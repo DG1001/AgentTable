@@ -185,14 +185,17 @@ def _pick_smalltalk_speaker(persons, searcher, last_name, counts, turn):
     return random.choice(below or pool)
 
 
-async def _smalltalk_say(agent, topic: str, group_id: int) -> str:
+async def _smalltalk_say(agent, topic: str, group_id: int, research: str = "") -> str:
     user = repo.get_user(agent["user_id"])
     topic_line = f"Thema (Vorschlag): {topic}" if topic else "Es gibt kein festes Thema — lass dir was einfallen."
+    research_line = (f"Frische Web-Recherche zum Thema (nutze aktuelle Bezüge gern, "
+                     f"aber locker):\n{research}") if research else ""
     system = render(
         "smalltalk_person",
         display_name=user["display_name"],
         persona=user["persona"] or "(keine Persona)",
         topic_line=topic_line,
+        research_line=research_line,
         recent_messages=context.recent_room_text(group_id),
     )
     resp = await call_and_log(
@@ -228,6 +231,17 @@ async def _run_smalltalk(group_id: int, topic: str, initiator: str) -> None:
                  + "Legt los. 😄")
         await post_room(group_id, intro, agent_id=admin["id"])
 
+        # quick web research on the topic so the chat can reference current stuff
+        research = ""
+        if topic and searcher:
+            research = await search_agent.speak_in_room(
+                searcher, f"kurzer aktueller Überblick und interessante Punkte zum Thema '{topic}'",
+                group_id,
+            )
+            if research:
+                await post_room(group_id, "📚 Kurz vorab, was gerade zum Thema läuft:\n\n" + research,
+                                agent_id=searcher["id"])
+
         counts: dict[str, int] = {}
         last_name = None
         max_turns = min(28, 6 + len(persons) * 4)
@@ -246,7 +260,7 @@ async def _run_smalltalk(group_id: int, topic: str, initiator: str) -> None:
                     speaker, f"überraschender oder lustiger Fakt zu: {seed}", group_id
                 )
             else:
-                content = await _smalltalk_say(speaker, topic, group_id)
+                content = await _smalltalk_say(speaker, topic, group_id, research)
                 last_content = content or last_content
             if not content:
                 content = "…"
