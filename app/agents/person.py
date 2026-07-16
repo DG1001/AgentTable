@@ -10,10 +10,32 @@ from app.agents import context
 from app.llm import get_client
 from app.llm.parsing import call_and_log
 from app.prompts import render
-from app.tools import TOOL_SCHEMAS, apply_tool_call
+from app.tools import ASK_TOOL_SCHEMAS, TOOL_SCHEMAS, apply_tool_call
 
 # how many user turns the onboarding lasts before we synthesise a persona
 ONBOARDING_TURNS = 3
+
+# The model frequently *claims* a room action ("ich hab den Rechercheur gefragt")
+# without emitting the tool call. When the text is about search/organizer intent
+# and no tool ran this turn, we force exactly that tool on a follow-up round.
+_SEARCH_HINTS = (
+    "rechercheur", "recherche", "such", "gesucht", "location", "locations", "bar",
+    "restaurant", "kneipe", "lokal", "biergarten", "café", "cafe",
+)
+_ADMIN_HINTS = (
+    "organisator", "orga ", "anstoß", "angestoß", "losgehen", "loslegen",
+    "vorschlag machen", "stand der", "wer noch fehlt", "starten kann",
+)
+
+
+def _forced_tool_for(text: str) -> str | None:
+    """Map an action-announcing reply to the room tool it should have called."""
+    t = text.lower()
+    if any(h in t for h in _SEARCH_HINTS):
+        return "ask_search"
+    if any(h in t for h in _ADMIN_HINTS):
+        return "ask_admin"
+    return None
 
 
 async def _run_onboarding(user, agent) -> str:
@@ -97,20 +119,30 @@ async def handle_private_message(user_id: int, text: str) -> list[dict]:
         role = "assistant" if m["role"] == "agent" else "user"
         messages.append({"role": role, "content": m["content"]})
 
-    tools = TOOL_SCHEMAS if task else None
+    # scheduling tools only during an active task; the "ask" tools always
+    tools = TOOL_SCHEMAS if task else ASK_TOOL_SCHEMAS
     import json as _json
 
     params = _json.loads(task["params_json"]) if task else {}
     emitted: list[dict] = []
     ready_triggered = False
+    nudged = False
+    called_tools: set[str] = set()
+    forced_choice: dict | None = None
+    # Intent from the USER's message is far more stable than the model's varying
+    # reply wording — use it as the primary signal for forcing a room tool.
+    user_intent = _forced_tool_for(text)
 
-    # allow up to 2 tool-call rounds so the agent can act then confirm
-    for _round in range(3):
+    # allow a few tool-call rounds so the agent can act then confirm
+    for _round in range(4):
         resp = await call_and_log(
-            get_client("person"), messages, tools=tools, group_id=user["group_id"],
-            task_id=task["id"] if task else None,
+            get_client("person"), messages, tools=tools,
+            tool_choice=forced_choice,
+            group_id=user["group_id"], task_id=task["id"] if task else None,
         )
+        forced_choice = None
         if resp.tool_calls:
+            called_tools.update(tc.name for tc in resp.tool_calls)
             messages.append({
                 "role": "assistant",
                 "content": resp.content or "",
@@ -132,9 +164,27 @@ async def handle_private_message(user_id: int, text: str) -> list[dict]:
                     "role": "tool", "tool_call_id": tc.id, "content": tool_msg,
                 })
             continue
-        if resp.content.strip():
-            repo.add_private_message(user_id, "agent", resp.content.strip())
-            emitted.append({"role": "agent", "content": resp.content.strip()})
+
+        text = resp.content.strip()
+        # Anti-phantom-action guard: the user asked for a room action (or the
+        # model claims one) but the matching tool never ran this turn — force it.
+        forced_tool = None
+        if tools and not nudged:
+            forced_tool = user_intent or _forced_tool_for(text)
+            if forced_tool in called_tools:
+                forced_tool = None
+        if forced_tool:
+            messages.append({"role": "assistant", "content": text})
+            messages.append({"role": "system", "content": (
+                f"Du hast eine Aktion angekündigt, aber KEINEN Tool-Call gemacht — es "
+                f"ist also nichts passiert. Führe sie JETZT per {forced_tool} aus.")})
+            nudged = True
+            forced_choice = {"type": "function", "function": {"name": forced_tool}}
+            continue
+
+        if text:
+            repo.add_private_message(user_id, "agent", text)
+            emitted.append({"role": "agent", "content": text})
         break
 
     if ready_triggered and task:

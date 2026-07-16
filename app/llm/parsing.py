@@ -39,11 +39,14 @@ async def call_and_log(
     *,
     tools: list[dict] | None = None,
     response_format: dict | None = None,
+    tool_choice: str | dict | None = None,
     group_id: int | None = None,
     task_id: int | None = None,
 ) -> LLMResponse:
     """Run ``client.chat`` and record token usage in ``llm_usage``."""
-    resp = await client.chat(messages, tools=tools, response_format=response_format)
+    resp = await client.chat(
+        messages, tools=tools, response_format=response_format, tool_choice=tool_choice
+    )
     repo.log_usage(
         role=client.role_config.role,
         model=client.role_config.model,

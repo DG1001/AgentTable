@@ -139,6 +139,13 @@ TOOL_SCHEMAS: list[dict] = [
 ]
 
 
+# The three "ask" tools are useful any time (also after a decision, e.g. to ask
+# the searcher for a venue); the scheduling tools only make sense during a task.
+_ASK_NAMES = {"ask_admin", "ask_agent", "ask_search"}
+ASK_TOOL_SCHEMAS = [t for t in TOOL_SCHEMAS if t["function"]["name"] in _ASK_NAMES]
+SCHEDULING_TOOL_SCHEMAS = [t for t in TOOL_SCHEMAS if t["function"]["name"] not in _ASK_NAMES]
+
+
 @dataclass
 class ToolResult:
     ok: bool

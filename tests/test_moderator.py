@@ -74,6 +74,38 @@ async def test_admin_request_reports_missing(db, mock_llm):
     assert "Kann's losgehen?" in contents
 
 
+async def test_phantom_action_forces_search_tool(db, mock_llm):
+    """If the model claims a room action but emits no tool call, the intended
+    tool is forced on a follow-up round (spec robustness)."""
+    from app.llm.client import LLMResponse, ToolCall
+    from app.search_provider import NullProvider, set_provider
+    from app.agents import person
+    set_provider(NullProvider())
+    group_id, members = bootstrap_group("Runde", ["Alex"])
+    agent = repo.get_person_agent(members[0]["user_id"])
+    repo.set_agent_state(agent["id"], "onboarding_done", True)
+    await start_task(group_id, PARAMS)
+
+    state = {"n": 0}
+
+    def r(role, messages, tools, rf):
+        if role != "person":
+            return LLMResponse(content="ok")
+        state["n"] += 1
+        if state["n"] == 1:
+            return LLMResponse(content="Klar, ich frag den Rechercheur!")  # phantom, no tool
+        if state["n"] == 2:
+            return LLMResponse(tool_calls=[ToolCall("t1", "ask_search", {"query": "bars"})])
+        return LLMResponse(content="Ist raus.")
+    mock_llm.router = r
+
+    before = len(repo.list_room_messages(group_id))
+    await person.handle_private_message(members[0]["user_id"], "frag den rechercheur nach bars in stuttgart")
+    new = repo.list_room_messages(group_id)[before:]
+    assert any("Zwischenfrage an den Rechercheur" in m["content"] for m in new)
+    set_provider(None)
+
+
 async def test_budget_scoped_to_negotiation(db, mock_llm):
     """Heavy collecting-phase usage (ask_* chatter) must NOT block negotiation —
     the budget only counts calls made after negotiation starts."""

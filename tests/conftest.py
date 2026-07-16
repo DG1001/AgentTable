@@ -31,7 +31,7 @@ class ScriptedLLM(MockLLM):
         self._router = router
         self.role = role
 
-    async def chat(self, messages, tools=None, response_format=None):
+    async def chat(self, messages, tools=None, response_format=None, tool_choice=None):
         self.calls.append({"messages": messages, "tools": tools, "response_format": response_format})
         return self._router(self.role, messages, tools, response_format)
 

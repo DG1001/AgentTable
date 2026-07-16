@@ -12,6 +12,28 @@
 
 ---
 
+## 2026-07-16 — Bugfix: „Phantom-Aktionen" (Agent behauptet Tool-Call, ohne ihn zu machen)
+
+Beobachtung: Chris' Agent sagte „ich hab den Rechercheur gefragt", aber es ging
+keine `ask_search`-Anfrage raus (kein Raum-Post). Ursache: deepseek-chat setzt den
+Tool-Call unzuverlässig ab und erzählt die Aktion stattdessen nur (gleiches Muster
+wie bei `mark_ready`).
+
+Zwei Ursachen + Fix:
+1. **Tool-Verfügbarkeit:** Die „Anfrage"-Tools (ask_admin/ask_agent/ask_search)
+   waren nur bei aktivem Task verfügbar. Der Task war aber schon `decided` →
+   gar keine Tools → nur Phantom-Text. **Fix:** `ASK_TOOL_SCHEMAS` sind jetzt
+   **immer** verfügbar (Rechercheur/andere Agenten kann man auch nach der
+   Entscheidung fragen), Scheduling-Tools nur bei aktivem Task.
+2. **Erzwingen:** Erkennt `handle_private_message` die Absicht (primär aus der
+   **User-Nachricht**, robuster als der schwankende Modell-Wortlaut) und wurde das
+   passende Tool in diesem Zug nicht aufgerufen, wird es per `tool_choice`
+   (OpenAI-kompatibel, von DeepSeek unterstützt) **erzwungen** — genau das Tool
+   (ask_search / ask_admin), kein spuriches `mark_ready`.
+- `tool_choice` durch die LLM-Abstraktion gereicht (`client`, `parsing`, Mock).
+- Prompt `person_private.md`: „keine Phantom-Aktionen" als oberste Regel.
+- Real 3/3 zuverlässig gegen DeepSeek; deterministischer Test ergänzt (24 grün).
+
 ## 2026-07-16 — Budget-Default angehoben (60 → 200)
 
 Nutzerhinweis: bisher ~1 Cent verbraucht — Kosten sind kein Thema. Das Budget ist

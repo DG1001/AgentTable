@@ -148,7 +148,15 @@ Function-Calling-Schemas (deutsch beschrieben), Validierung strikt in Code:
   gestützte Antwort (`person.answer_question`) im Raum. **Bewusst gedrosselt**:
   eine Frage → eine Antwort, kein autonomer Agent-Loop (§10).
 - Die raumseitigen Tools (`ask_admin`/`ask_search`/`ask_agent`) werden in
-  `person.py` async behandelt (nicht in `apply_tool_call`).
+  `person.py` async behandelt (nicht in `apply_tool_call`) und sind **immer**
+  verfügbar (`ASK_TOOL_SCHEMAS`); Scheduling-Tools nur bei aktivem Task.
+
+**Anti-Phantom-Action (Robustheit):** LLMs (v. a. deepseek-chat) behaupten
+manchmal eine Aktion, ohne den Tool-Call abzusetzen. `handle_private_message`
+leitet die Absicht primär aus der **User-Nachricht** ab; wurde das passende Tool
+im Zug nicht aufgerufen, wird es per `tool_choice` erzwungen (durch die
+LLM-Abstraktion gereicht). Kritische Statusänderungen (bereit) laufen zusätzlich
+über den deterministischen `POST /api/ready`.
 
 ## 8. HTTP-/WS-API (`app/main.py`)
 

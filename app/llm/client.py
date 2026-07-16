@@ -47,6 +47,7 @@ class LLMClient(Protocol):
         messages: list[dict],
         tools: list[dict] | None = None,
         response_format: dict | None = None,
+        tool_choice: str | dict | None = None,
     ) -> LLMResponse: ...
 
 
@@ -69,6 +70,7 @@ class OpenAICompatibleClient:
         messages: list[dict],
         tools: list[dict] | None = None,
         response_format: dict | None = None,
+        tool_choice: str | dict | None = None,
     ) -> LLMResponse:
         kwargs: dict[str, Any] = {
             "model": self.role_config.model,
@@ -77,7 +79,7 @@ class OpenAICompatibleClient:
         }
         if tools:
             kwargs["tools"] = tools
-            kwargs["tool_choice"] = "auto"
+            kwargs["tool_choice"] = tool_choice or "auto"
         if response_format:
             kwargs["response_format"] = response_format
 
@@ -143,6 +145,7 @@ class MockLLM:
         messages: list[dict],
         tools: list[dict] | None = None,
         response_format: dict | None = None,
+        tool_choice: str | dict | None = None,
     ) -> LLMResponse:
         self.calls.append({"messages": messages, "tools": tools, "response_format": response_format})
         if self.queue:
