@@ -12,6 +12,19 @@
 
 ---
 
+## 2026-07-16 — Such-Agent an SearXNG-Container angebunden
+
+- Der Workspace stellt einen SearXNG-Container bereit
+  (`http://searxng:8080/search?q=<begriff>&format=json`). Der bereits gebaute
+  `SearxngProvider` erzeugt genau dieses URL-Schema — daher nur Konfiguration:
+  `SEARCH_PROVIDER=searxng`, `SEARXNG_BASE_URL=http://searxng:8080` in `.env`
+  (+ als Default in `.env.example` dokumentiert).
+- **Verifiziert:** Container erreichbar (HTTP 200, JSON), `get_provider()` wählt
+  `SearxngProvider`, echte Ergebnisse; Such-Agent liefert über DeepSeek eine
+  kompakte, quellenreferenzierte deutsche Zusammenfassung (< 150 Wörter).
+- **Entscheidung:** SearXNG als Default statt Tavily — kein API-Key nötig, läuft
+  lokal im Workspace.
+
 ## 2026-07-16 — Phasen 0–3 im Grunddurchstich umgesetzt
 
 Ausgangslage: leeres Repo mit `spec.md`, `AGENTS.md`, `README_coder.md`.

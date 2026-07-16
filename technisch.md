@@ -118,6 +118,15 @@ der DB → Wiederaufnahme nach Neustart möglich.
 
 ## 7. Personen-Agent-Tools (`app/tools.py`)
 
+### Such-Provider
+
+`SearxngProvider` (Default in diesem Workspace) ruft den Container unter
+`SEARXNG_BASE_URL` auf: `GET {base}/search?q=<begriff>&format=json` und mappt
+`results[]` auf `SearchResult(title, url, snippet)`. Ohne erreichbaren Provider
+meldet sich der Such-Agent ehrlich als „nicht verfügbar".
+
+## 7b. Personen-Agent-Tools (`app/tools.py`)
+
 Function-Calling-Schemas (deutsch beschrieben), Validierung strikt in Code:
 - `set_availability(slots[])` — **ersetzt** alle Slots; prüft Zeitraum, `end>start`,
   Präferenz-Enum; merged Duplikate (stärkste Präferenz). Fehler → deutsche
@@ -178,7 +187,8 @@ bis `failed`.
 |---|---|---|
 | `LLM_API_KEY` / `LLM_BASE_URL` / `LLM_MODEL` | – / DeepSeek / deepseek-chat | LLM-Zugang |
 | `LLM_{PERSON,ADMIN,SEARCH}_MODEL` | (Fallback auf `LLM_MODEL`) | Rollen-Override |
-| `SEARCH_PROVIDER` | `none` | `tavily` / `searxng` |
+| `SEARCH_PROVIDER` | `searxng` | `tavily` / `searxng` / `none` |
+| `SEARXNG_BASE_URL` | `http://searxng:8080` | SearXNG-Container (JSON: `/search?q=…&format=json`) |
 | `TASK_LLM_BUDGET` | 60 | harte Call-Obergrenze pro Task |
 | `DB_PATH` | `data/agenttable.db` | SQLite-Datei |
 | `BASE_PATH` | (leer) | Sub-Pfad hinter Proxy |
