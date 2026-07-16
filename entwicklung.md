@@ -12,6 +12,19 @@
 
 ---
 
+## 2026-07-16 — Such-Agent: Retry auf CAPTCHA-freie Engines (OSM/Wikipedia)
+
+Der Container hat 85 Engines aktiv, aber die „general"-Web-Engines (google, brave,
+duckduckgo, startpage) werfen CAPTCHA/Rate-Limit. **openstreetmap** (Kategorie map)
+und **wikipedia** dagegen nicht — perfekt für Location-Fragen.
+
+Umgesetzt (dreistufig, degradiert sauber):
+1. Normale Web-Suche über alle Engines.
+2. Bei Block/leer: **Retry mit `&engines=openstreetmap,wikipedia`** (kein CAPTCHA;
+   liefert für knappe Ortsanfragen echte Venues, z. B. „Maulwurf Kneipe", „Pils Bar
+   Alt Stuttgart"). `SearchProvider.search` nimmt jetzt einen `engines`-Parameter.
+3. Wenn weiterhin nichts: Wissens-Fallback mit Hinweis.
+
 ## 2026-07-16 — Such-Agent: Wissens-Fallback bei blockierten Suchmaschinen
 
 Beobachtung: „Rechercheur findet nichts Brauchbares mehr." Diagnose (kein

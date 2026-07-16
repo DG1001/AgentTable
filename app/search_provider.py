@@ -29,13 +29,15 @@ class SearchResult:
 class SearchProvider(Protocol):
     available: bool
 
-    async def search(self, query: str, max_results: int = 5) -> list[SearchResult]: ...
+    async def search(
+        self, query: str, max_results: int = 5, engines: str | None = None
+    ) -> list[SearchResult]: ...
 
 
 class NullProvider:
     available = False
 
-    async def search(self, query: str, max_results: int = 5) -> list[SearchResult]:
+    async def search(self, query: str, max_results: int = 5, engines: str | None = None) -> list[SearchResult]:
         return []
 
 
@@ -45,7 +47,7 @@ class TavilyProvider:
     def __init__(self, api_key: str) -> None:
         self._key = api_key
 
-    async def search(self, query: str, max_results: int = 5) -> list[SearchResult]:
+    async def search(self, query: str, max_results: int = 5, engines: str | None = None) -> list[SearchResult]:
         async with httpx.AsyncClient(timeout=20) as client:
             resp = await client.post(
                 "https://api.tavily.com/search",
@@ -65,11 +67,12 @@ class SearxngProvider:
     def __init__(self, base_url: str) -> None:
         self._base = base_url.rstrip("/")
 
-    async def search(self, query: str, max_results: int = 5) -> list[SearchResult]:
+    async def search(self, query: str, max_results: int = 5, engines: str | None = None) -> list[SearchResult]:
+        params = {"q": query, "format": "json"}
+        if engines:  # target specific, CAPTCHA-free engines (e.g. openstreetmap)
+            params["engines"] = engines
         async with httpx.AsyncClient(timeout=20) as client:
-            resp = await client.get(
-                f"{self._base}/search", params={"q": query, "format": "json"}
-            )
+            resp = await client.get(f"{self._base}/search", params=params)
             resp.raise_for_status()
             data = resp.json()
         results = data.get("results", [])[:max_results]

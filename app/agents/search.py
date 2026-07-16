@@ -29,6 +29,10 @@ async def speak_in_room(agent, query_context: str, group_id: int, task_id: int |
     If the provider is unconfigured, blocked (rate-limit/CAPTCHA), or returns
     nothing, fall back to a clearly-flagged knowledge-based answer so the
     Rechercheur stays useful. Usable with or without an active task."""
+    # OpenStreetMap + Wikipedia don't CAPTCHA and are ideal for venue/location
+    # queries — used as a fallback when the general engines are blocked.
+    CAPTCHA_FREE = "openstreetmap,wikipedia"
+
     provider = get_provider()
     reason = ""
     results = []
@@ -39,10 +43,17 @@ async def speak_in_room(agent, query_context: str, group_id: int, task_id: int |
             results = await provider.search(query_context, max_results=5)
         except SearchUnavailable as exc:
             reason = f"Suchmaschinen temporär blockiert ({exc})"
-            log.warning("search unavailable: %s", exc)
+            log.warning("search unavailable, retrying with CAPTCHA-free engines: %s", exc)
         except Exception as exc:  # noqa: BLE001
             reason = f"Web-Suche fehlgeschlagen ({exc.__class__.__name__})"
             log.warning("search failed: %s", exc)
+        if not results and reason:  # retry on engines that don't rate-limit
+            try:
+                results = await provider.search(query_context, max_results=5, engines=CAPTCHA_FREE)
+                if results:
+                    reason = ""
+            except Exception as exc:  # noqa: BLE001
+                log.warning("captcha-free retry failed: %s", exc)
 
     if not results:
         return await _knowledge_fallback(query_context, reason or "keine Web-Treffer",

@@ -129,9 +129,10 @@ der DB → Wiederaufnahme nach Neustart möglich.
 `unresponsive_engines` (Rate-Limit/CAPTCHA) wirft er `SearchUnavailable` —
 unterscheidet also echte Fehlanzeige von blockierten Engines.
 
-**Wissens-Fallback:** Liefert die Suche nichts (Provider fehlt/blockiert/leer),
-antwortet der Such-Agent aus eigenem Modellwissen mit klarem „ohne Live-Recherche"-
-Hinweis (`prompts/search_fallback.md`), statt nur „nichts gefunden" zu melden.
+**Robustheit der Suche (dreistufig):** 1) normale Web-Suche; 2) bei Block/leer
+Retry mit `&engines=openstreetmap,wikipedia` (CAPTCHA-frei, ideal für Locations —
+`SearchProvider.search(engines=…)`); 3) sonst **Wissens-Fallback** aus Modellwissen
+mit klarem „ohne Live-Recherche"-Hinweis (`prompts/search_fallback.md`).
 
 ## 7b. Personen-Agent-Tools (`app/tools.py`)
 
