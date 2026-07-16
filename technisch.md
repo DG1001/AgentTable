@@ -119,6 +119,10 @@ der DB → Wiederaufnahme nach Neustart möglich.
 - Factory `get_client(role)` wählt real vs. mock anhand des API-Keys;
   `set_client_factory` überschreibt sie in Tests.
 
+**Provider-Kette:** Bei `SEARCH_PROVIDER=tavily` (+ Key + `SEARXNG_BASE_URL`) baut
+`get_provider` einen `FallbackProvider(Tavily, SearXNG)` — Tavily primär, SearXNG
+automatisch als Fallback bei Fehler/leer/Quota. Ohne Tavily-Key → SearXNG allein.
+
 ## 7. Personen-Agent-Tools (`app/tools.py`)
 
 ### Such-Provider

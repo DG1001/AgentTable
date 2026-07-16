@@ -12,6 +12,21 @@
 
 ---
 
+## 2026-07-16 — Suche: Tavily als Primär-Provider + Auto-Fallback auf SearXNG
+
+Nutzerwunsch: auf Tavily umstellen, bei erreichtem Tavily-Limit automatisch auf
+SearXNG zurückfallen (Brave-API abgelehnt — verlangt trotz Free-Tier Kreditkarte).
+
+Umgesetzt:
+- **`FallbackProvider(primary, secondary)`**: nutzt Tavily; bei Fehler ODER leerem
+  Ergebnis (z. B. Quota erreicht) automatisch SearXNG. `SearchProvider.search`
+  bekommt einheitlich den `engines`-Parameter durchgereicht.
+- `get_provider`/`_build_provider`: bei `SEARCH_PROVIDER=tavily` + Key + SearXNG-URL
+  → `FallbackProvider(Tavily, SearXNG)`; ohne Key → sauber SearXNG allein.
+- `.env`: `SEARCH_PROVIDER=tavily`, `TAVILY_API_KEY=…` (Free-Tier, keine Kreditkarte).
+- Verifiziert: Tavily liefert echte, quellenbelegte Treffer (Bars/Kneipen Stuttgart);
+  Tests für FallbackProvider (empty/error/propagate/engines) — 29 grün.
+
 ## 2026-07-16 — Such-Agent: Retry auf CAPTCHA-freie Engines (OSM/Wikipedia)
 
 Der Container hat 85 Engines aktiv, aber die „general"-Web-Engines (google, brave,
