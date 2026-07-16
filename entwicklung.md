@@ -25,6 +25,12 @@ aber die Mobile-UX war eng: alles in `100vh` mit zwei winzigen Nested-Scroll-Pan
   Seite zu verbreitern.
 - Playwright-verifiziert bei 390px (Handy) und 768px (Tablet): kein horizontaler
   Overflow, Chats gut lesbar.
+- **Nachtrag (echtes Handy, 1080px @ DPR 3 = 360 CSS-px):** war noch zu breit
+  (scrollWidth 475). Ursache: Grid/Flex-Kinder haben `min-width: auto` (=min-content)
+  und schrumpfen nicht unter ihren breitesten Token → ein langer URL/Wort zwang die
+  Spalte auf 463px. Fix: `min-width: 0` auf `.pane`/`.log` **plus**
+  `overflow-wrap: anywhere; word-break: break-word` auf `.msg`. Danach scrollWidth
+  = Viewport (360), bei 360px verifiziert.
 
 ## 2026-07-16 — Reconnect-Resync für beide Chats
 
