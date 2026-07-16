@@ -54,8 +54,10 @@ Terminfindung. Ursachen: (a) das Modell rief `start_smalltalk` zu eifrig auf, we
 ein Thema erwähnt wurde; (b) das Forcing konnte es zusätzlich auslösen.
 
 Fixes:
-- **Guard**: `start_smalltalk` verweigert, solange ein aktiver Task (collecting/
-  negotiating) läuft → keine Überlagerung mit dem Verhandlungs-Loop.
+- **Guard**: `start_smalltalk` verweigert nur während der **Verhandlung**
+  (`negotiating`) → keine Überlagerung mit dem live postenden Moderator-Loop.
+  (Nachträglich gelockert: in `collecting` wartet der Raum nur, Smalltalk dort ok —
+  reiner Helfer `smalltalk_block_reason` für Testbarkeit.)
 - **Kein Forcing** von `start_smalltalk` mehr (`_forced_tool_for` deckt nur noch
   ask_search/ask_admin ab) — loses Wort-Matching löste sonst spurious Smalltalk aus.
 - Tool-Beschreibung + Prompt geschärft (nur auf ausdrücklichen Wunsch, nicht

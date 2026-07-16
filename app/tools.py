@@ -125,7 +125,7 @@ TOOL_SCHEMAS: list[dict] = [
                 "(reines Gimmick, kein Terminkram). NUR aufrufen, wenn der User "
                 "AUSDRÜCKLICH danach fragt ('mach mal Smalltalk', 'lass die Agenten "
                 "quatschen') — NICHT, nur weil ein Thema erwähnt wurde, und NICHT "
-                "während einer laufenden Terminfindung."
+                "während die Agenten gerade den Termin verhandeln."
             ),
             "parameters": {
                 "type": "object",

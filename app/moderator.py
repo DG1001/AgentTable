@@ -164,16 +164,25 @@ _ST_MIN_PER_AGENT = 2  # everyone should speak at least this often before ending
 _ST_PAUSE = (2.0, 5.5)  # random seconds between messages (feels more natural)
 
 
+def smalltalk_block_reason(group_id: int) -> str | None:
+    """Why small talk can't start right now (or None). Only blocked during the
+    ACTIVE negotiation (moderator loop posts live) or if one already runs — during
+    collecting the room just waits, so small talk is fine."""
+    active = repo.get_active_task(group_id)
+    if active is not None and active["status"] == "negotiating":
+        return ("Gerade verhandeln die Agenten euren Termin — Smalltalk mache ich, "
+                "sobald das durch ist. 🙂")
+    if group_id in _smalltalk_active:
+        return "Im Raum läuft gerade schon ein Smalltalk. 😄"
+    return None
+
+
 async def start_smalltalk(user, topic: str) -> str:
     """Kick off a background small-talk session in the room (user-requested)."""
     group_id = user["group_id"]
-    # Don't clutter the room while a scheduling task is in progress — the
-    # negotiation loop posts there too, and it confused users (interleaving).
-    if repo.get_active_task(group_id) is not None:
-        return ("Während der laufenden Terminfindung halte ich den Gruppenraum lieber frei. "
-                "Smalltalk mache ich gern, sobald der Termin steht! 🙂")
-    if group_id in _smalltalk_active:
-        return "Im Raum läuft gerade schon ein Smalltalk. 😄"
+    reason = smalltalk_block_reason(group_id)
+    if reason:
+        return reason
     _smalltalk_active.add(group_id)
     asyncio.create_task(_run_smalltalk(group_id, topic.strip(), user["display_name"]))
     extra = f" (Thema: {topic.strip()})" if topic.strip() else ""

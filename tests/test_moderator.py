@@ -134,15 +134,16 @@ async def test_smalltalk_runs_and_ends(db, mock_llm):
     set_provider(None)
 
 
-async def test_smalltalk_refused_during_active_task(db, mock_llm):
-    """Small talk must not start while a scheduling task is active (no interleaving)."""
-    from app.moderator import start_smalltalk
-    group_id, members = bootstrap_group("Runde", ["Alex"])
-    await start_task(group_id, PARAMS)  # active collecting task
-    user = repo.get_user(members[0]["user_id"])
-    msg = await start_smalltalk(user, "Porsche")
-    assert "Terminfindung" in msg
-    assert not any("Lust auf Smalltalk" in r["content"] for r in repo.list_room_messages(group_id))
+async def test_smalltalk_blocked_only_during_negotiation(db, mock_llm):
+    """Small talk is blocked only during active negotiation, not while collecting."""
+    from app.moderator import smalltalk_block_reason
+    group_id, _ = bootstrap_group("Runde", ["Alex"])
+    task = await start_task(group_id, PARAMS)  # collecting
+
+    assert smalltalk_block_reason(group_id) is None  # collecting -> allowed
+
+    repo.update_task_status(task["id"], "negotiating")
+    assert "verhandeln" in (smalltalk_block_reason(group_id) or "")  # negotiating -> blocked
 
 
 async def test_budget_scoped_to_negotiation(db, mock_llm):
