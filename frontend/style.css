@@ -36,6 +36,12 @@ header h1 { font-size: 1.4rem; margin: 0; }
 .room table { border-collapse: collapse; font-size: 0.82rem; margin-top: 4px; }
 .room th, .room td { border: 1px solid var(--border); padding: 2px 6px; }
 
+.ready-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 8px 12px; border-top: 1px solid var(--border); background: #fbf7ee; }
+.ready-bar.hidden { display: none; }
+button.ready { background: #81b29a; }
+button.ready:disabled { background: #ccd6cf; color: #6b7d74; cursor: default; }
+
 .composer { display: flex; gap: 8px; padding: 10px; border-top: 1px solid var(--border); }
 .composer input { flex: 1; padding: 9px 11px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.92rem; }
 button { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 9px 14px; cursor: pointer; font-size: 0.9rem; }

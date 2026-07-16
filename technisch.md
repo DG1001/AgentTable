@@ -145,8 +145,10 @@ Function-Calling-Schemas (deutsch beschrieben), Validierung strikt in Code:
 ## 8. HTTP-/WS-API (`app/main.py`)
 
 REST (unter `/api`):
-- `GET /me`, `GET /private/history`, `GET /room/history`, `GET /task`,
-  `POST /task/start`.
+- `GET /me` (inkl. `ready`-Flag), `GET /private/history`, `GET /room/history`,
+  `GET /task`, `POST /task/start`.
+- `POST /ready` — markiert den User deterministisch als bereit (Guard: ≥1 Slot),
+  triggert `check_and_advance`. Umgeht die Unzuverlässigkeit des LLM-`mark_ready`.
 - Auth: Token als `?t=` oder Cookie `at_token`.
 
 WebSockets:

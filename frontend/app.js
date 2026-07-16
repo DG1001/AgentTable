@@ -67,7 +67,9 @@ function appendRoom(m) {
 }
 
 // --- task panel -----------------------------------------------------------
+let lastTask = null;
 function renderTask(task) {
+  lastTask = task;
   const el = qs("#task-status");
   if (!task) {
     el.className = "task-status muted";
@@ -84,6 +86,27 @@ function renderTask(task) {
   el.className = "task-status active";
   el.innerHTML = html;
   qs("#start-btn").style.display = ["collecting", "negotiating"].includes(task.status) ? "none" : "";
+}
+
+let myReady = false;
+function renderReadyBar(task, ready) {
+  const bar = qs("#ready-bar"), btn = qs("#ready-btn");
+  if (task && task.status === "collecting") {
+    bar.classList.remove("hidden");
+    btn.disabled = !!ready;
+    btn.textContent = ready ? "✓ Bereit gemeldet" : "✓ Ich bin bereit";
+  } else {
+    bar.classList.add("hidden");
+  }
+}
+
+async function refreshMe() {
+  try {
+    const me = await (await fetch("api/me" + (tokenFromUrl ? `?t=${tokenFromUrl}` : ""))).json();
+    myReady = !!me.ready;
+    renderTask(me.task);
+    renderReadyBar(me.task, myReady);
+  } catch {}
 }
 
 // --- websockets -----------------------------------------------------------
@@ -132,6 +155,8 @@ async function main() {
   (await (await fetch("api/room/history" + (tokenFromUrl ? `?t=${tokenFromUrl}` : ""))).json())
     .messages.forEach(appendRoom);
   renderTask(me.task);
+  myReady = !!me.ready;
+  renderReadyBar(me.task, myReady);
 
   if (!me.onboarding_done && qs("#private-log").children.length === 0) {
     appendPrivate({ role: "agent", content: "Hi! Ich bin dein persönlicher Agent. Erzähl mir kurz etwas über dich — wie sollen wir dich nennen?" });
@@ -145,7 +170,15 @@ async function main() {
       appendRoom(msg.message);
       if (msg.message.kind !== "system") AgentViz.speak(msg.message.agent_id);
     }
-    if (msg.type === "task_update") renderTask(msg.task);
+    if (msg.type === "task_update") { renderTask(msg.task); refreshMe(); }
+  });
+
+  // deterministic readiness (the LLM often forgets to call mark_ready)
+  qs("#ready-btn").addEventListener("click", async () => {
+    const r = await fetch("api/ready" + (tokenFromUrl ? `?t=${tokenFromUrl}` : ""), { method: "POST" });
+    const data = await r.json();
+    if (data.ok) { myReady = true; renderReadyBar(lastTask, true); }
+    else if (data.message) appendPrivate({ role: "system", content: data.message });
   });
 
   qs("#private-form").addEventListener("submit", (e) => {

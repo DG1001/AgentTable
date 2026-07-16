@@ -52,6 +52,8 @@ def me(request: Request):
     agent = repo.get_person_agent(user["id"])
     group = repo.get_group(user["group_id"])
     task = repo.latest_task(user["group_id"])
+    active = repo.get_active_task(user["group_id"])
+    ready = bool(repo.get_agent_state(agent["id"], f"ready:{active['id']}", False)) if active else False
     return {
         "user": {"id": user["id"], "display_name": user["display_name"],
                  "persona": user["persona"], "group_id": user["group_id"]},
@@ -60,7 +62,27 @@ def me(request: Request):
         "onboarding_done": bool(repo.get_agent_state(agent["id"], "onboarding_done", False)),
         "agents": [serialize.agent_public(a) for a in repo.list_agents(user["group_id"])],
         "task": serialize.task_public(task),
+        "ready": ready,
     }
+
+
+@api.post("/ready")
+async def set_ready(request: Request):
+    """Deterministically mark the user ready (no LLM in the loop — LLMs skip the
+    mark_ready tool too often). Guard: requires at least one availability slot."""
+    user = _require_user(request)
+    task = repo.get_active_task(user["group_id"])
+    if task is None:
+        raise HTTPException(status_code=409, detail="Keine aktive Terminfindung.")
+    if not repo.list_availability(user["id"]):
+        return {"ok": False, "message": "Bitte nenne deinem Agenten zuerst mindestens einen möglichen Termin."}
+    agent = repo.get_person_agent(user["id"])
+    repo.set_agent_state(agent["id"], f"ready:{task['id']}", True)
+    repo.add_private_message(user["id"], "system", "✓ Du bist als bereit markiert.")
+    last = repo.list_private_messages(user["id"], limit=1)[-1]
+    await hub.to_private(user["id"], {"type": "private_message", "message": serialize.private_message(last)})
+    asyncio.create_task(check_and_advance(task["id"]))
+    return {"ok": True, "ready": True}
 
 
 @api.get("/private/history")

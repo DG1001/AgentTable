@@ -12,6 +12,24 @@
 
 ---
 
+## 2026-07-16 — Nutzer-Feedback: deterministischer „Bereit"-Button
+
+Beobachtung: Beim Versuch, „fertig" zu melden, blieb der User auf `ready=False`,
+obwohl Slots vorhanden waren. Ursache: **der LLM-Agent rief das `mark_ready`-Tool
+schlicht nicht auf** (er „glaubte", schon fertig zu sein) — die bekannte
+Unzuverlässigkeit von Tool-Calls bei der kritischen Statusänderung.
+
+Umgesetzt:
+- **`POST /api/ready`**: setzt die Bereitschaft deterministisch (mit derselben
+  Guard: mindestens ein Slot nötig), triggert `check_and_advance`, bestätigt im
+  Privatchat. `/api/me` liefert jetzt zusätzlich `ready`.
+- **Frontend „✓ Ich bin bereit"-Button** im Privatchat, sichtbar im Status
+  `collecting`; nach Klick „Bereit gemeldet" (disabled). Aktualisiert sich über
+  `task_update`-Events (Refetch von `/api/me`).
+- **Entscheidung:** Kritische Statusübergänge (bereit) laufen nicht mehr über das
+  LLM, sondern über eine explizite UI-Aktion — zuverlässig und für den User klar.
+  Das NL-Tool `mark_ready` bleibt als bequemer Zusatzweg erhalten.
+
 ## 2026-07-16 — Nutzer-Feedback: Agent kann Orga/Such-Agent ansprechen + mark_ready-Guard
 
 Beobachtung aus erstem echten Test: „Der Orga läuft nicht an." Diagnose über
