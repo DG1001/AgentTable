@@ -12,14 +12,17 @@ import os
 from app.service import bootstrap_group
 
 
-def magic_link(token: str, port: int) -> str:
-    """Build the external magic-link. In a XaresAICoder workspace we derive it
-    from VSCODE_PROXY_URI ({{port}} placeholder); otherwise fall back to localhost."""
-    template = os.environ.get("VSCODE_PROXY_URI")
-    if template:
-        base = template.replace("{{port}}", str(port)).rstrip("/")
+def magic_link(token: str, port: int, base_url: str | None = None) -> str:
+    """Build the external magic-link.
+
+    ``base_url`` (e.g. a mapped subdomain like https://table.example.org) wins if
+    given. Otherwise derive it from VSCODE_PROXY_URI ({{port}} placeholder), else
+    fall back to localhost."""
+    if base_url:
+        base = base_url.rstrip("/")
     else:
-        base = f"http://localhost:{port}"
+        template = os.environ.get("VSCODE_PROXY_URI")
+        base = template.replace("{{port}}", str(port)).rstrip("/") if template else f"http://localhost:{port}"
     return f"{base}/?t={token}"
 
 
@@ -29,6 +32,8 @@ def main() -> None:
     ap.add_argument("--members", default="Alex,Bea,Chris,Dana",
                     help="comma-separated display names")
     ap.add_argument("--port", type=int, default=8000)
+    ap.add_argument("--base-url", default=None,
+                    help="explicit public base URL, e.g. https://table.example.org")
     args = ap.parse_args()
 
     names = [n.strip() for n in args.members.split(",") if n.strip()]
@@ -37,7 +42,7 @@ def main() -> None:
     print(f"\n✅ Gruppe '{args.group}' (id={group_id}) mit {len(members)} Mitgliedern angelegt.\n")
     print("Magic-Links (jeweils einer Person geben):")
     for m in members:
-        print(f"  • {m['name']:<10} {magic_link(m['token'], args.port)}")
+        print(f"  • {m['name']:<10} {magic_link(m['token'], args.port, args.base_url)}")
     print()
 
 
