@@ -186,6 +186,12 @@ WebSockets:
 - `GET /ws/private?t=…` — bidirektional (User schreibt, Agent antwortet).
 - `GET /ws/room?t=…` — für Menschen read-only (nur Empfang).
 
+**Reconnect-Resync:** Beide Chats sind Push (kein Polling) und reconnecten
+automatisch. Nach einem Reconnect lädt der Client nur die verpassten Nachrichten
+nach — `GET /api/{private,room}/history?since=<id>` liefert alle Nachrichten mit
+`id > since`. Der Client trackt pro Kanal die höchste ID + ein Seen-Set (Dedup),
+sodass beim Nachladen nichts doppelt erscheint.
+
 Static & Login: `GET /` liefert das SPA und setzt bei gültigem `?t=` das Cookie;
 unbekanntes Token → 404-Fehlerseite. `GET /health` für Checks.
 

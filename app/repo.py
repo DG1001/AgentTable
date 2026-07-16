@@ -138,8 +138,13 @@ def add_private_message(user_id: int, role: str, content: str, db: Database | No
 
 
 def list_private_messages(
-    user_id: int, limit: int | None = None, db: Database | None = None
+    user_id: int, limit: int | None = None, since: int | None = None, db: Database | None = None
 ) -> list[sqlite3.Row]:
+    if since is not None:
+        return _db(db).query(
+            "SELECT * FROM private_message WHERE user_id = ? AND id > ? ORDER BY id",
+            (user_id, since),
+        )
     if limit is None:
         return _db(db).query(
             "SELECT * FROM private_message WHERE user_id = ? ORDER BY id", (user_id,)
@@ -166,8 +171,13 @@ def get_room_message(message_id: int, db: Database | None = None) -> sqlite3.Row
 
 
 def list_room_messages(
-    group_id: int, limit: int | None = None, db: Database | None = None
+    group_id: int, limit: int | None = None, since: int | None = None, db: Database | None = None
 ) -> list[sqlite3.Row]:
+    if since is not None:
+        return _db(db).query(
+            "SELECT * FROM room_message WHERE group_id = ? AND id > ? ORDER BY id",
+            (group_id, since),
+        )
     if limit is None:
         return _db(db).query(
             "SELECT * FROM room_message WHERE group_id = ? ORDER BY id", (group_id,)

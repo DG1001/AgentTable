@@ -12,6 +12,20 @@
 
 ---
 
+## 2026-07-16 — Reconnect-Resync für beide Chats
+
+Beide Chatfenster sind Push (WebSocket) und reconnecten automatisch, luden aber
+nach einem Reconnect verpasste Nachrichten bisher nicht nach (nur bei Page-Reload).
+
+Umgesetzt:
+- `GET /api/{private,room}/history?since=<id>` (Repo: `since`-Filter `id > since`).
+- Client (`app.js`): trackt pro Kanal `lastPrivateId`/`lastRoomId` + Seen-Set
+  (Dedup in `appendPrivate`/`appendRoom`). `connect()` ruft bei **Reconnect**
+  (nicht beim ersten Open) `resyncPrivate`/`resyncRoom` → lädt `?since=<lastId>`
+  nach und hängt nur Neues an (kein Speak-Flackern, da über `appendRoom`).
+- End-to-End verifiziert (Playwright): verpasste Nachricht erscheint nach Resync
+  genau einmal, zweiter Resync dupliziert nicht.
+
 ## 2026-07-16 — Gimmick: Smalltalk-Modus
 
 Nutzerwunsch: Agent kann Smalltalk anstoßen; Agenten quatschen dann random

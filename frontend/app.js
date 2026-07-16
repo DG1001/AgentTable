@@ -58,7 +58,17 @@ function renderTable(rows) {
 }
 
 // --- message rendering ----------------------------------------------------
+// Track the highest message id per channel + a seen-set, so a reconnect can
+// resync only the missed messages (via ?since=) without duplicating.
+let lastPrivateId = 0, lastRoomId = 0;
+const seenPrivate = new Set(), seenRoom = new Set();
+
 function appendPrivate(m) {
+  if (m.id) {
+    if (seenPrivate.has(m.id)) return;
+    seenPrivate.add(m.id);
+    lastPrivateId = Math.max(lastPrivateId, m.id);
+  }
   const log = qs("#private-log");
   const div = document.createElement("div");
   div.className = "msg " + (m.role === "user" ? "user" : m.role === "system" ? "system" : "agent");
@@ -67,6 +77,11 @@ function appendPrivate(m) {
   log.scrollTop = log.scrollHeight;
 }
 function appendRoom(m) {
+  if (m.id) {
+    if (seenRoom.has(m.id)) return;
+    seenRoom.add(m.id);
+    lastRoomId = Math.max(lastRoomId, m.id);
+  }
   const log = qs("#room-log");
   const div = document.createElement("div");
   div.className = "msg " + (m.kind === "system" ? "system" : "agent");
@@ -135,15 +150,36 @@ function wsUrl(path) {
   const t = tokenFromUrl ? `?t=${encodeURIComponent(tokenFromUrl)}` : "";
   return `${proto}//${location.host}${base}/${path}${t}`;
 }
-function connect(path, onMsg) {
-  let ws;
+function apiUrl(path, params = {}) {
+  const q = new URLSearchParams(params);
+  if (tokenFromUrl) q.set("t", tokenFromUrl);
+  const s = q.toString();
+  return "api/" + path + (s ? "?" + s : "");
+}
+function connect(path, onMsg, onReopen) {
+  let ws, first = true;
   const open = () => {
     ws = new WebSocket(wsUrl(path));
+    ws.onopen = () => { if (!first && onReopen) onReopen(); first = false; };
     ws.onmessage = (e) => onMsg(JSON.parse(e.data), ws);
     ws.onclose = () => setTimeout(open, 1500);
   };
   open();
   return () => ws;
+}
+// On reconnect: pull only the messages missed during the outage (deduped by id).
+async function resyncPrivate() {
+  try {
+    const d = await (await fetch(apiUrl("private/history", { since: lastPrivateId }))).json();
+    d.messages.forEach(appendPrivate);
+  } catch {}
+}
+async function resyncRoom() {
+  try {
+    const d = await (await fetch(apiUrl("room/history", { since: lastRoomId }))).json();
+    d.messages.forEach(appendRoom);
+  } catch {}
+  refreshMe();
 }
 
 // --- boot -----------------------------------------------------------------
@@ -169,10 +205,8 @@ async function main() {
   // 8-bit table scene (Phase 4): seat the group's agents (organizer, search, people)
   AgentViz.init(document.getElementById("viz"), me.agents || []);
 
-  (await (await fetch("api/private/history" + (tokenFromUrl ? `?t=${tokenFromUrl}` : ""))).json())
-    .messages.forEach(appendPrivate);
-  (await (await fetch("api/room/history" + (tokenFromUrl ? `?t=${tokenFromUrl}` : ""))).json())
-    .messages.forEach(appendRoom);
+  (await (await fetch(apiUrl("private/history"))).json()).messages.forEach(appendPrivate);
+  (await (await fetch(apiUrl("room/history"))).json()).messages.forEach(appendRoom);
   renderTask(me.task);
   myReady = !!me.ready;
   renderReadyBar(me.task, myReady);
@@ -183,14 +217,14 @@ async function main() {
 
   const getPrivate = connect("ws/private", (msg) => {
     if (msg.type === "private_message") appendPrivate(msg.message);
-  });
+  }, resyncPrivate);
   connect("ws/room", (msg) => {
     if (msg.type === "room_message") {
       appendRoom(msg.message);
       if (msg.message.kind !== "system") AgentViz.speak(msg.message.agent_id);
     }
     if (msg.type === "task_update") { renderTask(msg.task); refreshMe(); }
-  });
+  }, resyncRoom);
 
   // deterministic readiness (the LLM often forgets to call mark_ready)
   qs("#ready-btn").addEventListener("click", async () => {

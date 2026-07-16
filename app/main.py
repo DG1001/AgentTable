@@ -85,17 +85,26 @@ async def set_ready(request: Request):
     return {"ok": True, "ready": True}
 
 
+def _since(request: Request) -> int | None:
+    """Parse an optional ?since=<id> for reconnect resync."""
+    raw = request.query_params.get("since")
+    try:
+        return int(raw) if raw not in (None, "") else None
+    except ValueError:
+        return None
+
+
 @api.get("/private/history")
 def private_history(request: Request):
     user = _require_user(request)
-    rows = repo.list_private_messages(user["id"])
+    rows = repo.list_private_messages(user["id"], since=_since(request))
     return {"messages": [serialize.private_message(r) for r in rows]}
 
 
 @api.get("/room/history")
 def room_history(request: Request):
     user = _require_user(request)
-    rows = repo.list_room_messages(user["group_id"])
+    rows = repo.list_room_messages(user["group_id"], since=_since(request))
     return {"messages": [serialize.room_message(r) for r in rows]}
 
 
