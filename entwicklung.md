@@ -46,6 +46,14 @@ Umgesetzt:
 - End-to-End verifiziert (Playwright): verpasste Nachricht erscheint nach Resync
   genau einmal, zweiter Resync dupliziert nicht.
 
+## 2026-07-16 — Smalltalk: zufällige Pausen zwischen Meldungen
+
+Wunsch: realistischer wirken lassen. Zwischen den Smalltalk-Meldungen jetzt eine
+**zufällige Pause** (`_ST_PAUSE = (2.0, 5.5)` s, `asyncio.sleep(random.uniform(...))`
+vor jedem Zug außer dem ersten). Läuft im Hintergrund; die Nachrichten „ploppen"
+gestaffelt per WebSocket im Raum auf. Test setzt `_ST_PAUSE = (0, 0)` (kein echtes
+Schlafen; die Guard `_ST_PAUSE[1] > 0` lässt zudem den RNG unangetastet).
+
 ## 2026-07-16 — Gimmick: Smalltalk-Modus
 
 Nutzerwunsch: Agent kann Smalltalk anstoßen; Agenten quatschen dann random

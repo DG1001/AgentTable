@@ -161,6 +161,7 @@ async def handle_admin_request(user, task, request_text: str) -> str:
 # --- small talk (gimmick) -------------------------------------------------
 _smalltalk_active: set[int] = set()
 _ST_MIN_PER_AGENT = 2  # everyone should speak at least this often before ending
+_ST_PAUSE = (2.0, 5.5)  # random seconds between messages (feels more natural)
 
 
 async def start_smalltalk(user, topic: str) -> str:
@@ -236,6 +237,8 @@ async def _run_smalltalk(group_id: int, topic: str, initiator: str) -> None:
             everyone_spoke = all(counts.get(a["name"], 0) >= _ST_MIN_PER_AGENT for a in persons)
             if everyone_spoke and await _smalltalk_should_end(group_id):
                 break
+            if turn > 0 and _ST_PAUSE[1] > 0:  # natural pause between messages
+                await asyncio.sleep(random.uniform(*_ST_PAUSE))
             speaker = _pick_smalltalk_speaker(persons, searcher, last_name, counts, turn)
             if speaker["kind"] == "search":
                 seed = (last_content or topic or "Alltag")[:80]

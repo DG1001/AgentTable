@@ -109,10 +109,12 @@ async def test_phantom_action_forces_search_tool(db, mock_llm):
 async def test_smalltalk_runs_and_ends(db, mock_llm):
     """Small talk: each agent speaks >= the minimum, admin frames it, loop ends."""
     import random as _r
+    import app.moderator as moderator
     from app.llm.client import LLMResponse
     from app.moderator import _ST_MIN_PER_AGENT, _run_smalltalk
     from app.search_provider import NullProvider, set_provider
     set_provider(NullProvider())
+    moderator._ST_PAUSE = (0, 0)  # no real sleeping in tests
     _r.seed(1)
     group_id, _ = bootstrap_group("Runde", ["Alex", "Bea"])
 
