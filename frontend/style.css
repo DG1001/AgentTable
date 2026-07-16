@@ -46,6 +46,8 @@ header h1 { font-size: 1.4rem; margin: 0; }
 .msg.user a.src { background: rgba(255, 255, 255, 0.22); color: #fff; }
 
 .room .msg.agent { border-left: 3px solid var(--who, #ccc); }
+/* wide candidate tables scroll inside the bubble instead of widening the page */
+.msg table { display: block; width: max-content; max-width: 100%; overflow-x: auto; }
 .room table { border-collapse: collapse; font-size: 0.82rem; margin-top: 4px; }
 .room th, .room td { border: 1px solid var(--border); padding: 2px 6px; }
 
@@ -87,5 +89,14 @@ dialog input, dialog select { padding: 7px 9px; border: 1px solid var(--border);
 dialog menu { display: flex; justify-content: flex-end; gap: 8px; padding: 0; margin: 6px 0 0; }
 
 @media (max-width: 760px) {
-  #layout { grid-template-columns: 1fr; }
+  /* Stack the panes and let the PAGE scroll instead of cramming everything into
+     100vh with two tiny nested scroll areas. Each chat gets a usable height. */
+  body { height: auto; }
+  #app { height: auto; min-height: 100vh; }
+  #layout { grid-template-columns: 1fr; flex: none; }
+  .pane { overflow: visible; }
+  .log { flex: none; min-height: 220px; max-height: 55vh; }
+  #private-form input { font-size: 16px; } /* prevents iOS zoom-on-focus */
+  #viz { height: 200px; }
+  header { flex-wrap: wrap; gap: 4px 12px; }
 }

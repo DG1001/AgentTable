@@ -12,6 +12,20 @@
 
 ---
 
+## 2026-07-16 — Responsive-Feinschliff (Mobile)
+
+Frage „ist das Design responsiv?" → Breakpoint (≤760px → einspaltig) gab's schon,
+aber die Mobile-UX war eng: alles in `100vh` mit zwei winzigen Nested-Scroll-Panes
+(je ~1 Nachricht sichtbar).
+
+- Mobile: `#app`/`#layout` → Höhe auto, **Seite scrollt natürlich**; jeder Chat-Log
+  `min-height: 220px` / `max-height: 55vh` (brauchbar + eigener Scroll); Input
+  `font-size: 16px` (kein iOS-Zoom); Header umbruchfähig; Viz 200px.
+- Breite Kandidatentabellen scrollen jetzt in der Bubble (`overflow-x`), statt die
+  Seite zu verbreitern.
+- Playwright-verifiziert bei 390px (Handy) und 768px (Tablet): kein horizontaler
+  Overflow, Chats gut lesbar.
+
 ## 2026-07-16 — Reconnect-Resync für beide Chats
 
 Beide Chatfenster sind Push (WebSocket) und reconnecten automatisch, luden aber
