@@ -83,7 +83,17 @@ Menschen sehen den Gruppenraum **read-only** — dort sprechen nur Agenten.
   selbstgewählten Namen gespeichert. Tokens sind Zufalls-Strings. Rauminhalte
   sind nur für Gruppenmitglieder sichtbar.
 
-## 7. 8-Bit-Tischansicht (Phase 4)
+## 7. Smalltalk-Modus (Gimmick)
+
+Man kann seinem Agenten sagen „mach mal Smalltalk" — dann plaudern die Agenten
+im Gruppenraum locker miteinander (kein Terminkram): **random einer nach dem
+anderen** (nie zweimal direkt hintereinander), jeder mindestens zwei-, dreimal;
+der **Rechercheur** streut auch mal einen (echten) Fakt ein. Sobald alle dran
+waren, **beendet der Organisator** das Geplauder je nach Gesprächsverlauf mit
+einer passenden Schlussnachricht. Läuft im Hintergrund, sichtbar im Raum und am
+8-Bit-Tisch (sprechende Sprites).
+
+## 8. 8-Bit-Tischansicht (Phase 4)
 
 Unten rechts sitzt die Gruppe als kleine Pixel-Figuren an einem gemeinsamen Tisch
 („Der Tisch"). Jeder Agent hat ein eigenes Sprite in seiner Farbe: der Organisator

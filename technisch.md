@@ -157,9 +157,14 @@ Function-Calling-Schemas (deutsch beschrieben), Validierung strikt in Code:
   anderen Person (Ziel per Name/Anzeigename aufgelöst); postet Frage + eine
   gestützte Antwort (`person.answer_question`) im Raum. **Bewusst gedrosselt**:
   eine Frage → eine Antwort, kein autonomer Agent-Loop (§10).
-- Die raumseitigen Tools (`ask_admin`/`ask_search`/`ask_agent`) werden in
-  `person.py` async behandelt (nicht in `apply_tool_call`) und sind **immer**
-  verfügbar (`ASK_TOOL_SCHEMAS`); Scheduling-Tools nur bei aktivem Task.
+- `start_smalltalk(topic?)` — Gimmick: startet `moderator._run_smalltalk`, einen
+  Hintergrund-Loop mit **zufälliger** Sprecherwahl (No-Repeat, Bias auf Untervertretene,
+  ~22 % Rechercheur mit echtem Fun-Fact). Admin-LLM entscheidet das Ende
+  (`smalltalk_end`) erst wenn alle ≥`_ST_MIN_PER_AGENT` dran waren; harte
+  `max_turns`-Grenze; `_smalltalk_active`-Guard gegen Doppelstart.
+- Die raumseitigen Tools (`ask_admin`/`ask_search`/`ask_agent`/`start_smalltalk`)
+  werden in `person.py` async behandelt (nicht in `apply_tool_call`) und sind
+  **immer** verfügbar (`ASK_TOOL_SCHEMAS`); Scheduling-Tools nur bei aktivem Task.
 
 **Anti-Phantom-Action (Robustheit):** LLMs (v. a. deepseek-chat) behaupten
 manchmal eine Aktion, ohne den Tool-Call abzusetzen. `handle_private_message`

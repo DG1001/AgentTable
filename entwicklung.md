@@ -12,6 +12,24 @@
 
 ---
 
+## 2026-07-16 — Gimmick: Smalltalk-Modus
+
+Nutzerwunsch: Agent kann Smalltalk anstoßen; Agenten quatschen dann random
+nacheinander (nie zweimal direkt hintereinander), dürfen den Rechercheur nutzen,
+und nach einigen Runden (jeder ≥2×) beendet der Organisator es je nach Inhalt.
+
+Umgesetzt:
+- **Tool `start_smalltalk(topic?)`** (immer verfügbar, in `_ASK_NAMES`), Forcing-
+  Hint dafür in `_forced_tool_for` (falls das LLM nur ankündigt).
+- **`moderator._run_smalltalk`**: Hintergrund-Loop, `random`-Sprecherwahl mit
+  No-Repeat + Bias auf noch-nicht-genug-dran; ~22 % Chance auf den Rechercheur
+  (echter Fun-Fact via Tavily); Ende-Entscheidung des Admin-LLM (`smalltalk_end`,
+  JSON) erst wenn alle ≥`_ST_MIN_PER_AGENT`; Schlussnachricht (`smalltalk_close`);
+  harte Obergrenze `max_turns`. `_smalltalk_active`-Guard gegen Doppelstart.
+- Prompts `smalltalk_person/_end/_close.md`.
+- Real verifiziert (Personas in character, Rechercheur-Fakten, Admin-Abschluss);
+  deterministischer Test (30 grün).
+
 ## 2026-07-16 — UI: Quellen als klickbare Chips rendern
 
 Nutzerwunsch: die Recherche-Quellen schicker darstellen. Der Mini-Markdown-Renderer

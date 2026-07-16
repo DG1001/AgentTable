@@ -26,11 +26,16 @@ _ADMIN_HINTS = (
     "organisator", "orga ", "anstoß", "angestoß", "losgehen", "loslegen",
     "vorschlag machen", "stand der", "wer noch fehlt", "starten kann",
 )
+_SMALLTALK_HINTS = (
+    "smalltalk", "small talk", "quatsch", "plausch", "labern", "schnack", "geplauder",
+)
 
 
 def _forced_tool_for(text: str) -> str | None:
     """Map an action-announcing reply to the room tool it should have called."""
     t = text.lower()
+    if any(h in t for h in _SMALLTALK_HINTS):
+        return "start_smalltalk"
     if any(h in t for h in _SEARCH_HINTS):
         return "ask_search"
     if any(h in t for h in _ADMIN_HINTS):
@@ -153,7 +158,7 @@ async def handle_private_message(user_id: int, text: str) -> list[dict]:
                 ],
             })
             for tc in resp.tool_calls:
-                if tc.name in ("ask_admin", "ask_search", "ask_agent"):
+                if tc.name in ("ask_admin", "ask_search", "ask_agent", "start_smalltalk"):
                     tool_msg = await _handle_room_tool(user, task, tc.name, tc.arguments)
                 else:
                     result = apply_tool_call(user_id, tc.name, tc.arguments, params)
@@ -243,6 +248,9 @@ async def _handle_room_tool(user, task, name: str, args: dict) -> str:
 
     if name == "ask_admin":
         return await moderator.handle_admin_request(user, task, (args.get("request") or "").strip())
+
+    if name == "start_smalltalk":
+        return await moderator.start_smalltalk(user, args.get("topic") or "")
 
     if name == "ask_agent":
         group_id = user["group_id"]

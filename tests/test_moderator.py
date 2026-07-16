@@ -106,6 +106,32 @@ async def test_phantom_action_forces_search_tool(db, mock_llm):
     set_provider(None)
 
 
+async def test_smalltalk_runs_and_ends(db, mock_llm):
+    """Small talk: each agent speaks >= the minimum, admin frames it, loop ends."""
+    import random as _r
+    from app.llm.client import LLMResponse
+    from app.moderator import _ST_MIN_PER_AGENT, _run_smalltalk
+    from app.search_provider import NullProvider, set_provider
+    set_provider(NullProvider())
+    _r.seed(1)
+    group_id, _ = bootstrap_group("Runde", ["Alex", "Bea"])
+
+    def router(role, messages, tools, rf):
+        if rf and rf.get("type") == "json_object":
+            return LLMResponse(content='{"end": true, "reason": "rund"}')
+        return LLMResponse(content="Lockeres Geplauder hier. 😄")
+    mock_llm.router = router
+
+    await _run_smalltalk(group_id, "Urlaub", "Alex")
+
+    msgs = repo.list_room_messages(group_id)
+    names = [repo.get_agent(m["agent_id"])["name"] if m["agent_id"] else "System" for m in msgs]
+    assert names.count("Alexs Agent") >= _ST_MIN_PER_AGENT
+    assert names.count("Beas Agent") >= _ST_MIN_PER_AGENT
+    assert names.count("Organisator") >= 2  # intro + closing
+    set_provider(None)
+
+
 async def test_budget_scoped_to_negotiation(db, mock_llm):
     """Heavy collecting-phase usage (ask_* chatter) must NOT block negotiation —
     the budget only counts calls made after negotiation starts."""

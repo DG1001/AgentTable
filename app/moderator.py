@@ -17,6 +17,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import random
 from datetime import datetime, timedelta
 
 from app import repo, serialize
@@ -155,6 +156,114 @@ async def handle_admin_request(user, task, request_text: str) -> str:
     msg = "Die Terminfindung ist bereits abgeschlossen. Schau ins Ergebnis oben. 🙂"
     await post_room(group_id, msg, agent_id=admin["id"])
     return msg
+
+
+# --- small talk (gimmick) -------------------------------------------------
+_smalltalk_active: set[int] = set()
+_ST_MIN_PER_AGENT = 2  # everyone should speak at least this often before ending
+
+
+async def start_smalltalk(user, topic: str) -> str:
+    """Kick off a background small-talk session in the room (user-requested)."""
+    group_id = user["group_id"]
+    if group_id in _smalltalk_active:
+        return "Im Raum läuft gerade schon ein Smalltalk. 😄"
+    _smalltalk_active.add(group_id)
+    asyncio.create_task(_run_smalltalk(group_id, topic.strip(), user["display_name"]))
+    extra = f" (Thema: {topic.strip()})" if topic.strip() else ""
+    return f"Alles klar — ich hab den Smalltalk im Gruppenraum angestoßen{extra}. Schau mal rein! 🎉"
+
+
+def _pick_smalltalk_speaker(persons, searcher, last_name, counts, turn):
+    """Random next speaker: never twice in a row, bias to those below the minimum,
+    occasionally the Rechercheur for a fun fact."""
+    if searcher and turn > 0 and last_name != searcher["name"] and random.random() < 0.22:
+        return searcher
+    pool = [a for a in persons if a["name"] != last_name] or list(persons)
+    below = [a for a in pool if counts.get(a["name"], 0) < _ST_MIN_PER_AGENT]
+    return random.choice(below or pool)
+
+
+async def _smalltalk_say(agent, topic: str, group_id: int) -> str:
+    user = repo.get_user(agent["user_id"])
+    topic_line = f"Thema (Vorschlag): {topic}" if topic else "Es gibt kein festes Thema — lass dir was einfallen."
+    system = render(
+        "smalltalk_person",
+        display_name=user["display_name"],
+        persona=user["persona"] or "(keine Persona)",
+        topic_line=topic_line,
+        recent_messages=context.recent_room_text(group_id),
+    )
+    resp = await call_and_log(
+        get_client("person"),
+        [{"role": "system", "content": system},
+         {"role": "user", "content": "Du bist dran. Sag locker etwas (1–2 Sätze)."}],
+        group_id=group_id,
+    )
+    return resp.content.strip()
+
+
+async def _smalltalk_should_end(group_id: int) -> bool:
+    admin = repo.get_agent_by_kind(group_id, "admin")
+    system = render("smalltalk_end", recent_messages=context.recent_room_text(group_id, k=14))
+    resp = await call_and_log(
+        get_client("admin"),
+        [{"role": "system", "content": system},
+         {"role": "user", "content": "Beenden? Antworte als JSON."}],
+        response_format={"type": "json_object"}, group_id=group_id,
+    )
+    return bool(parse_json(resp.content).get("end", False))
+
+
+async def _run_smalltalk(group_id: int, topic: str, initiator: str) -> None:
+    try:
+        admin = repo.get_agent_by_kind(group_id, "admin")
+        persons = repo.list_person_agents(group_id)
+        searcher = repo.get_agent_by_kind(group_id, "search")
+        if not persons:
+            return
+        intro = (f"{initiator} hat Lust auf Smalltalk! "
+                 + (f"Thema: {topic}. " if topic else "Kein festes Thema — quatscht einfach. ")
+                 + "Legt los. 😄")
+        await post_room(group_id, intro, agent_id=admin["id"])
+
+        counts: dict[str, int] = {}
+        last_name = None
+        max_turns = min(28, 6 + len(persons) * 4)
+        last_content = topic
+
+        for turn in range(max_turns):
+            everyone_spoke = all(counts.get(a["name"], 0) >= _ST_MIN_PER_AGENT for a in persons)
+            if everyone_spoke and await _smalltalk_should_end(group_id):
+                break
+            speaker = _pick_smalltalk_speaker(persons, searcher, last_name, counts, turn)
+            if speaker["kind"] == "search":
+                seed = (last_content or topic or "Alltag")[:80]
+                content = await search_agent.speak_in_room(
+                    speaker, f"überraschender oder lustiger Fakt zu: {seed}", group_id
+                )
+            else:
+                content = await _smalltalk_say(speaker, topic, group_id)
+                last_content = content or last_content
+            if not content:
+                content = "…"
+            await post_room(group_id, content, agent_id=speaker["id"])
+            counts[speaker["name"]] = counts.get(speaker["name"], 0) + 1
+            last_name = speaker["name"]
+
+        closing = await call_and_log(
+            get_client("admin"),
+            [{"role": "system", "content": render("smalltalk_close",
+                                                  recent_messages=context.recent_room_text(group_id, k=14))},
+             {"role": "user", "content": "Beende den Smalltalk charmant."}],
+            group_id=group_id,
+        )
+        await post_room(group_id, closing.content.strip() or "So, genug geplaudert! 😄", agent_id=admin["id"])
+        log.info("smalltalk in group %s ended after %d turns", group_id, sum(counts.values()))
+    except Exception:  # noqa: BLE001
+        log.exception("smalltalk failed")
+    finally:
+        _smalltalk_active.discard(group_id)
 
 
 def _collecting_timed_out(task) -> bool:
