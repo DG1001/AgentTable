@@ -122,8 +122,10 @@ TOOL_SCHEMAS: list[dict] = [
             "name": "start_smalltalk",
             "description": (
                 "Stößt einen lockeren Smalltalk unter den Agenten im Gruppenraum an "
-                "(reines Gimmick, kein Terminkram). NUR auf Wunsch des Users "
-                "('mach mal Smalltalk', 'lass die Agenten quatschen')."
+                "(reines Gimmick, kein Terminkram). NUR aufrufen, wenn der User "
+                "AUSDRÜCKLICH danach fragt ('mach mal Smalltalk', 'lass die Agenten "
+                "quatschen') — NICHT, nur weil ein Thema erwähnt wurde, und NICHT "
+                "während einer laufenden Terminfindung."
             ),
             "parameters": {
                 "type": "object",

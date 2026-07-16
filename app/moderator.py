@@ -167,6 +167,11 @@ _ST_PAUSE = (2.0, 5.5)  # random seconds between messages (feels more natural)
 async def start_smalltalk(user, topic: str) -> str:
     """Kick off a background small-talk session in the room (user-requested)."""
     group_id = user["group_id"]
+    # Don't clutter the room while a scheduling task is in progress — the
+    # negotiation loop posts there too, and it confused users (interleaving).
+    if repo.get_active_task(group_id) is not None:
+        return ("Während der laufenden Terminfindung halte ich den Gruppenraum lieber frei. "
+                "Smalltalk mache ich gern, sobald der Termin steht! 🙂")
     if group_id in _smalltalk_active:
         return "Im Raum läuft gerade schon ein Smalltalk. 😄"
     _smalltalk_active.add(group_id)

@@ -26,16 +26,13 @@ _ADMIN_HINTS = (
     "organisator", "orga ", "anstoß", "angestoß", "losgehen", "loslegen",
     "vorschlag machen", "stand der", "wer noch fehlt", "starten kann",
 )
-_SMALLTALK_HINTS = (
-    "smalltalk", "small talk", "quatsch", "plausch", "labern", "schnack", "geplauder",
-)
-
-
 def _forced_tool_for(text: str) -> str | None:
-    """Map an action-announcing reply to the room tool it should have called."""
+    """Map an action-announcing reply to the room tool it should have called.
+
+    Deliberately does NOT cover start_smalltalk: forcing that from loose word
+    matches spuriously kicked off small talk (e.g. mid-scheduling). Small talk is
+    only started when the model explicitly calls the tool on the user's request."""
     t = text.lower()
-    if any(h in t for h in _SMALLTALK_HINTS):
-        return "start_smalltalk"
     if any(h in t for h in _SEARCH_HINTS):
         return "ask_search"
     if any(h in t for h in _ADMIN_HINTS):

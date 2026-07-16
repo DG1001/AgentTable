@@ -46,6 +46,21 @@ Umgesetzt:
 - End-to-End verifiziert (Playwright): verpasste Nachricht erscheint nach Resync
   genau einmal, zweiter Resync dupliziert nicht.
 
+## 2026-07-16 — Bugfix: Smalltalk startete während laufender Terminfindung
+
+Beobachtung: neue Terminfindung gestartet, dann dem Agenten geschrieben → ein
+Smalltalk (Thema „Porsche") lief parallel im selben Raum los und überlagerte die
+Terminfindung. Ursachen: (a) das Modell rief `start_smalltalk` zu eifrig auf, weil
+ein Thema erwähnt wurde; (b) das Forcing konnte es zusätzlich auslösen.
+
+Fixes:
+- **Guard**: `start_smalltalk` verweigert, solange ein aktiver Task (collecting/
+  negotiating) läuft → keine Überlagerung mit dem Verhandlungs-Loop.
+- **Kein Forcing** von `start_smalltalk` mehr (`_forced_tool_for` deckt nur noch
+  ask_search/ask_admin ab) — loses Wort-Matching löste sonst spurious Smalltalk aus.
+- Tool-Beschreibung + Prompt geschärft (nur auf ausdrücklichen Wunsch, nicht
+  während Terminfindung). Test ergänzt (31 grün).
+
 ## 2026-07-16 — Smalltalk: Web-Recherche-Opener zum Thema
 
 Wunsch: zu Beginn eine schnelle Web-Recherche zum Thema, damit aktuelle Dinge
