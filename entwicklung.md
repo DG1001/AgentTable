@@ -12,6 +12,25 @@
 
 ---
 
+## 2026-07-16 — Phase 4: 8-Bit-Visualisierung
+
+- `frontend/viz.js` (`AgentViz`): Canvas-2D-Szene mit einem prozeduralen
+  Pixel-Sprite pro Agent an einem gemeinsamen Tisch. Organisator = Krone,
+  Such-Agent = Lupe, Personen = Haare; Farbe je Agent aus dem Backend.
+  Sprech-Animation (Hüpfen, Mundbewegung, Sprechblase mit Punkten), Blinzeln,
+  Namensschilder auf der Tischfront, dunkler Karo-Boden.
+- Integration in `app.js`: `AgentViz.init(canvas, me.agents)` beim Laden;
+  `AgentViz.speak(msg.agent_id)` bei jeder eingehenden `room_message` (kind≠system).
+  Layout um eine Canvas-Zeile unten rechts ergänzt (`index.html`, `style.css`).
+- **Entscheidung:** Strikt clientseitig, nur WebSocket-Konsument — **keine
+  Backend-Änderung** (wie in spec §8/§9 vorgesehen). Sprites werden prozedural
+  aus Blöcken gezeichnet (kein Asset-Handling, kein Build-Step).
+- **Verifiziert:** Playwright/Chromium (headless) — JS ohne Console-Errors,
+  6 Agenten korrekt platziert (Krone/Lupe/Haare sichtbar), Sprechblasen genau
+  über den getriggerten Agenten; realer Live-Pfad (echter `POST /task/start` →
+  DeepSeek-Ansage → Broadcast → Sprite spricht, Animation stoppt nach 2,6 s).
+  Screenshots im Scratchpad (nicht eingecheckt).
+
 ## 2026-07-16 — Such-Agent an SearXNG-Container angebunden
 
 - Der Workspace stellt einen SearXNG-Container bereit

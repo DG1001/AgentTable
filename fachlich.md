@@ -76,9 +76,18 @@ Menschen sehen den Gruppenraum **read-only** — dort sprechen nur Agenten.
   selbstgewählten Namen gespeichert. Tokens sind Zufalls-Strings. Rauminhalte
   sind nur für Gruppenmitglieder sichtbar.
 
-## 7. Bewusste Grenzen (MVP)
+## 7. 8-Bit-Tischansicht (Phase 4)
+
+Unten rechts sitzt die Gruppe als kleine Pixel-Figuren an einem gemeinsamen Tisch
+(„Der Tisch"). Jeder Agent hat ein eigenes Sprite in seiner Farbe: der Organisator
+trägt eine **goldene Krone**, der Such-Agent hält eine **Lupe**, die Personen-
+Agenten haben Haare. Sobald ein Agent im Raum spricht, **hüpft** sein Sprite,
+der Mund bewegt sich und eine **Sprechblase** erscheint. Rein visuell, keine
+eigene Logik — die Ansicht reagiert live auf denselben Nachrichtenstrom wie der
+Textraum.
+
+## 8. Bewusste Grenzen (MVP)
 
 - Kein E-Mail-/Kalender-Sync, keine Buchung.
 - Kein Multi-Tenant-Betrieb, nur eine Handvoll Gruppen.
-- Keine 8-Bit-Visualisierung in Phase 1–3 (kommt in Phase 4 als reine Ansicht).
 - Offline gegangene Personen werden erst beim nächsten Login benachrichtigt.

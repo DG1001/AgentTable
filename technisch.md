@@ -153,8 +153,17 @@ Optionaler `BASE_PATH` mountet die App unter einem Sub-Pfad (nginx).
 ## 9. Frontend (`frontend/`)
 
 Vanilla JS, kein Build. Zwei-Spalten-Layout: links Privatchat, rechts Task-Panel
-+ Gruppenraum. Mini-Markdown-Renderer (Bold/Italic/Pipe-Tabellen) für die
-Kandidatentabelle. Reconnutende WebSockets. Agentenfarben aus dem Backend.
++ Gruppenraum + 8-Bit-Tischansicht. Mini-Markdown-Renderer (Bold/Italic/Pipe-
+Tabellen) für die Kandidatentabelle. Reconnutende WebSockets. Agentenfarben aus
+dem Backend.
+
+- `app.js` — Boot, REST-Load, WebSockets, Chat-Composer, Start-Dialog.
+- `viz.js` — **8-Bit-Visualisierung (Phase 4)**, gekapselt als `AgentViz`
+  (`init(canvas, agents)`, `speak(agentId)`, `setAgents(...)`). Canvas-2D-Renderer
+  mit prozeduralen Pixel-Sprites (Blöcke, begrenzte Palette), Tisch, Namensschildern,
+  Blinzeln und Sprech-Animation. **Rein clientseitig, keine Backend-Änderung** —
+  `app.js` ruft `AgentViz.speak(msg.agent_id)` bei jeder `room_message` (kind≠system).
+  Die Animation läuft `TALK_MS` (2,6 s) und stoppt dann automatisch.
 
 ## 10. Betrieb / Deployment
 

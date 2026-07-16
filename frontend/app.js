@@ -124,6 +124,9 @@ async function main() {
     p.classList.remove("hidden");
   }
 
+  // 8-bit table scene (Phase 4): seat the group's agents (organizer, search, people)
+  AgentViz.init(document.getElementById("viz"), me.agents || []);
+
   (await (await fetch("api/private/history" + (tokenFromUrl ? `?t=${tokenFromUrl}` : ""))).json())
     .messages.forEach(appendPrivate);
   (await (await fetch("api/room/history" + (tokenFromUrl ? `?t=${tokenFromUrl}` : ""))).json())
@@ -138,7 +141,10 @@ async function main() {
     if (msg.type === "private_message") appendPrivate(msg.message);
   });
   connect("ws/room", (msg) => {
-    if (msg.type === "room_message") appendRoom(msg.message);
+    if (msg.type === "room_message") {
+      appendRoom(msg.message);
+      if (msg.message.kind !== "system") AgentViz.speak(msg.message.agent_id);
+    }
     if (msg.type === "task_update") renderTask(msg.task);
   });
 
