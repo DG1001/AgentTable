@@ -53,6 +53,8 @@ def task_public(task, db=None) -> dict | None:
         "result": json.loads(task["result_json"]) if task["result_json"] else None,
         "created_at": task["created_at"],
         "decided_at": task["decided_at"],
+        # share token exposed only for decided tasks (generated lazily on read)
+        "share_token": repo.ensure_share_token(task["id"], db=db) if task["status"] == "decided" else None,
     }
 
 

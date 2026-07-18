@@ -109,6 +109,15 @@ MIGRATIONS: list[tuple[int, str]] = [
         CREATE INDEX idx_agent_group ON agent(group_id);
         """,
     ),
+    # v2: public share token for a decided task (ICS export + shareable card).
+    # Additive / non-destructive — existing rows get NULL.
+    (
+        2,
+        """
+        ALTER TABLE task ADD COLUMN share_token TEXT;
+        CREATE INDEX idx_task_share_token ON task(share_token);
+        """,
+    ),
 ]
 
 

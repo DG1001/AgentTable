@@ -56,6 +56,7 @@ Thumbs.db
 data/*.db
 data/*.db-wal
 data/*.db-shm
+data/*.bak*
 .venv/
 
 # Screenshots / images dropped into the repo root (never commit these)

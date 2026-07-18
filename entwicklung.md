@@ -4,6 +4,29 @@
 > welcher Begründung getroffen wurden. Neueste Einträge oben.
 > Fachlich: [fachlich.md](fachlich.md) · Technisch: [technisch.md](technisch.md).
 
+## 2026-07-18 — Milestone 1: Ergebnis nutzbar machen (ICS + teilbare Karte)
+
+Ziel: den entschiedenen Termin über die App hinaus nutzbar machen (User-Wunsch,
+„allgemeiner/wertvoller"). Google-Calendar-MCP bewusst weggelassen.
+
+- **ICS-Export** (`app/ics.py`, pure `build_ics`): VEVENT aus `result_json`,
+  Berlin→UTC via `zoneinfo`, RFC-5545-Escaping + CRLF. Route
+  `GET /api/task/{id}/ics` (token-gated).
+- **Teilbare Ergebnis-Karte**: `task.share_token` (Schema **v2**, additive
+  `ALTER TABLE … ADD COLUMN`, non-destruktiv), bei `decided` gesetzt bzw. lazy via
+  `repo.ensure_share_token` (auch für vor-existierende decided Tasks). Öffentliche
+  Routen `GET /share/{token}` (HTML-Karte + OG-Meta) und `GET /share/{token}.ics`.
+- Frontend: im decided-Zustand Buttons „📅 Zum Kalender" (ICS) und „🔗 Ergebnis
+  teilen" (kopiert `/share/<token>`-Link).
+- Tests: `tests/test_ics.py` (ICS-Format/UTC, share_token lazy+idempotent,
+  Migration v2) — 35 grün, mit isolierter Test-DB.
+- **Datensicherheit:** Live-DB (`data/agenttable.db`, Gruppe „Die 4") vor Deploy
+  gesichert; Migration additiv; E2E-Test in separater Demo-DB/Port (echte Instanz
+  unberührt). Siehe [[agenttable-preserve-live-data]].
+
+### Roadmap (weitere gewählte Richtungen)
+Tisch-Emotes/Reaktionen · Persona-Gedächtnis über Sessions · EN/DE-i18n · Web-Push.
+
 ## 2026-07-18 — Open-Source-Vorbereitung
 
 - Versehentlich committeten Screenshot komplett aus Datei + History entfernt;

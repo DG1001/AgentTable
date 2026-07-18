@@ -116,10 +116,25 @@ function renderTask(task) {
   if (task.result && task.result.slot) {
     html += `<br/>✅ <strong>${esc(task.result.slot.label)}</strong>`;
     if (task.result.location) html += ` @ ${esc(task.result.location)}`;
+    if (task.status === "decided" && task.share_token) {
+      html += `<div class="result-actions">`
+        + `<a class="mini" href="${apiUrl(`task/${task.id}/ics`)}">📅 Zum Kalender</a>`
+        + `<button class="mini" type="button" onclick="shareResult(event,'${task.share_token}')">🔗 Ergebnis teilen</button>`
+        + `</div>`;
+    }
   }
   el.className = "task-status active";
   el.innerHTML = html;
   qs("#start-btn").style.display = ["collecting", "negotiating"].includes(task.status) ? "none" : "";
+}
+
+// Copy the public share-card link to the clipboard (button lives in the task panel).
+function shareResult(ev, token) {
+  const url = location.origin + "/share/" + token;
+  const btn = ev.target, orig = btn.textContent;
+  const ok = () => { btn.textContent = "✓ kopiert"; setTimeout(() => (btn.textContent = orig), 1500); };
+  if (navigator.clipboard) navigator.clipboard.writeText(url).then(ok).catch(() => prompt("Link zum Teilen:", url));
+  else prompt("Link zum Teilen:", url);
 }
 
 let myReady = false;

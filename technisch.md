@@ -180,6 +180,16 @@ REST (unter `/api`):
   `GET /task`, `POST /task/start`.
 - `POST /ready` — markiert den User deterministisch als bereit (Guard: ≥1 Slot),
   triggert `check_and_advance`. Umgeht die Unzuverlässigkeit des LLM-`mark_ready`.
+- `GET /task/{id}/ics` — `.ics`-Export des entschiedenen Termins (token-gated).
+
+Öffentliche Ergebnis-Routen (am `app`-Mount, **ohne** Auth, über `task.share_token`):
+- `GET /share/{token}` — self-contained HTML-Ergebnis-Karte (OG-Meta, Kalender-Link).
+- `GET /share/{token}.ics` — derselbe ICS-Export ohne Login.
+
+**ICS-Export** (`app/ics.py`, pure): `build_ics(task, group, member_names)` baut ein
+VEVENT aus `result_json`; Slot-Zeiten (naive Europe/Berlin) werden via `zoneinfo`
+nach UTC (`…Z`) konvertiert. `share_token` (Schema v2, additiv) wird bei `decided`
+gesetzt bzw. lazy via `repo.ensure_share_token` für Alt-Tasks.
 - Auth: Token als `?t=` oder Cookie `at_token`.
 
 WebSockets:

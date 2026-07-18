@@ -56,6 +56,10 @@ Menschen sehen den Gruppenraum **read-only** — dort sprechen nur Agenten.
 6. **Entscheidung** (`decided`): Der Organisator wählt einen Termin aus der
    Kandidatenliste. Der Code validiert, dass der Termin wirklich für alle passt.
    Das Ergebnis wird im Raum zusammengefasst und jeder Person privat mitgeteilt.
+   - **Ergebnis nutzbar machen:** Jede Person kann den Termin als **`.ics`-Datei**
+     in ihren Kalender übernehmen und über einen **öffentlichen, read-only
+     Ergebnis-Link** teilen (`/share/<token>` — schöne Karte mit Termin/Ort/
+     Teilnehmern, inkl. Kalender-Download; kein Login nötig).
 7. **Kein gemeinsamer Termin?** Zurück zu Schritt 4 (max. 2 Wiederholungen),
    danach `failed` mit Bericht.
 

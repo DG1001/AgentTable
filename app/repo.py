@@ -232,6 +232,29 @@ def get_task(task_id: int, db: Database | None = None) -> sqlite3.Row | None:
     return _db(db).query_one("SELECT * FROM task WHERE id = ?", (task_id,))
 
 
+def set_task_share_token(task_id: int, token: str, db: Database | None = None) -> None:
+    _db(db).execute("UPDATE task SET share_token = ? WHERE id = ?", (token, task_id))
+
+
+def get_task_by_share_token(token: str, db: Database | None = None) -> sqlite3.Row | None:
+    if not token:
+        return None
+    return _db(db).query_one("SELECT * FROM task WHERE share_token = ?", (token,))
+
+
+def ensure_share_token(task_id: int, db: Database | None = None) -> str | None:
+    """Return the task's share token, generating one lazily for decided tasks that
+    predate the feature. Returns None if the task isn't decided."""
+    task = get_task(task_id, db=db)
+    if task is None or task["status"] != "decided":
+        return None
+    if task["share_token"]:
+        return task["share_token"]
+    token = secrets.token_urlsafe(12)
+    set_task_share_token(task_id, token, db=db)
+    return token
+
+
 def get_active_task(group_id: int, db: Database | None = None) -> sqlite3.Row | None:
     return _db(db).query_one(
         "SELECT * FROM task WHERE group_id = ? AND status IN ('collecting','negotiating') "

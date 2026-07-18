@@ -70,6 +70,11 @@ button:hover { filter: brightness(1.05); }
 .task-head h2 { border: none; padding: 0; }
 .task-status { padding: 8px 14px 12px; }
 .task-status.active { color: var(--ink); }
+.result-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.result-actions .mini { display: inline-flex; align-items: center; gap: 4px; font-size: 0.82rem;
+  padding: 5px 10px; border-radius: 8px; text-decoration: none; cursor: pointer;
+  background: #eef1f5; color: var(--ink); border: 1px solid var(--border); }
+.result-actions .mini:hover { background: #e4e8ee; }
 .badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 600; }
 .badge.collecting { background: #fff2cc; }
 .badge.negotiating { background: #d6e4ff; }

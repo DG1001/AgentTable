@@ -528,6 +528,7 @@ async def _decide_and_finalize(task, candidates, table: str) -> None:
         "summary": summary,
     }
     repo.update_task_status(task["id"], "decided", result=result)
+    repo.ensure_share_token(task["id"])  # public share/ICS capability
     task = repo.get_task(task["id"])
     log.info("task %s decided: %s @ %s", task["id"], chosen.label(), location)
 
