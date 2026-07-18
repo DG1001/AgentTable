@@ -4,6 +4,17 @@
 > welcher Begründung getroffen wurden. Neueste Einträge oben.
 > Fachlich: [fachlich.md](fachlich.md) · Technisch: [technisch.md](technisch.md).
 
+## 2026-07-18 — Open-Source-Vorbereitung
+
+- Versehentlich committeten Screenshot komplett aus Datei + History entfernt;
+  einzigen echten Vornamen aus einer Dev-Log-Notiz genericisiert; unpublizierte
+  Commits zu sauberen Commits zusammengefasst. Voll-History-Scan: keine
+  Namen/Keys/Subdomain/E-Mails/Bilder in getrackten Dateien.
+- `LICENSE` (MIT) + Top-Level `README.md` (englisch) erstellt.
+- `.gitignore`: Root-Bilder/Screenshots ignoriert.
+- `.env.example` publikationsfreundlich: `SEARCH_PROVIDER=none` als Default,
+  generische Kommentare (kein workspace-spezifisches `searxng:8080` mehr).
+
 ## Konventionen
 
 - Sprache im Code: Englisch (Bezeichner/Kommentare). UI + Agenten: Deutsch.
@@ -45,6 +56,20 @@ Umgesetzt:
   nach und hängt nur Neues an (kein Speak-Flackern, da über `appendRoom`).
 - End-to-End verifiziert (Playwright): verpasste Nachricht erscheint nach Resync
   genau einmal, zweiter Resync dupliziert nicht.
+
+## 2026-07-16 — Bugfix: Smalltalk-Under-Triggering (LLM erfand Block-Grund)
+
+Beobachtung: User sagte „starte Smalltalk über KI", Agent antwortete aber, der
+Organisator lasse es nicht zu, weil eine Person beim Termin noch nicht fertig sei — und
+rief das Tool gar nicht auf. Das LLM verwechselte Termin-Bereitschaft mit einem
+Smalltalk-Block (Halluzination) und under-triggerte (nachdem Smalltalk-Forcing
+wegen früherer spurious Trigger entfernt worden war).
+
+Fix: Smalltalk wird wieder erzwungen — aber **nur aus der USER-Nachricht**
+(`_forced_tool_for(text, include_smalltalk=True)`), nicht aus der Modell-Antwort.
+So forced „mach Smalltalk" es zuverlässig, während ein zufälliges „quatschen" in
+der Agenten-Antwort keinen spurious Smalltalk auslöst. Tool-Beschreibung + Prompt
+klargestellt (Sammelphase erlaubt, Bereitschaft anderer irrelevant, keine Ausreden).
 
 ## 2026-07-16 — Bugfix: Smalltalk startete während laufender Terminfindung
 

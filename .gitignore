@@ -58,6 +58,12 @@ data/*.db-wal
 data/*.db-shm
 .venv/
 
+# Screenshots / images dropped into the repo root (never commit these)
+Screenshot*.png
+/*.png
+/*.jpg
+/*.jpeg
+
 # Environment variables
 .env
 .env.local
