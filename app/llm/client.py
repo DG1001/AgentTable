@@ -34,6 +34,7 @@ class ToolCall:
 class LLMResponse:
     content: str = ""
     tool_calls: list[ToolCall] = field(default_factory=list)
+    reasoning_content: str = ""  # DeepSeek thinking-mode CoT (must be echoed back on tool-call turns)
     prompt_tokens: int = 0
     completion_tokens: int = 0
     raw: Any = None
@@ -104,10 +105,14 @@ class OpenAICompatibleClient:
             except json.JSONDecodeError:
                 args = {}
             tool_calls.append(ToolCall(id=tc.id, name=tc.function.name, arguments=args))
+        rc = getattr(msg, "reasoning_content", None)
+        if rc is None and getattr(msg, "model_extra", None):
+            rc = msg.model_extra.get("reasoning_content")
         usage = getattr(resp, "usage", None)
         return LLMResponse(
             content=msg.content or "",
             tool_calls=tool_calls,
+            reasoning_content=rc or "",
             prompt_tokens=getattr(usage, "prompt_tokens", 0) or 0,
             completion_tokens=getattr(usage, "completion_tokens", 0) or 0,
             raw=resp,

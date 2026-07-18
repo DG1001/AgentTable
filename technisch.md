@@ -174,10 +174,18 @@ Function-Calling-Schemas (deutsch beschrieben), Validierung strikt in Code:
 anhand der Tool-Beschreibungen (kein Keyword→Tool-Mapping — das führte zu
 Fehl-Routing, z. B. „location ändern" → fälschlich Suche). **Anti-Phantom-Netz:**
 behauptet das Modell eine Aktion, ohne ein Tool aufzurufen
-(`_seems_to_promise_action`, tool-*agnostisch*), wird **ein** Folge-Durchgang mit
-`tool_choice="required"` erzwungen — **das Modell wählt weiterhin selbst, welches
-Tool**. Kritische Statusänderungen (bereit) laufen zusätzlich über den
+(`_seems_to_promise_action`, tool-*agnostisch*), wird **ein** Folge-Durchgang per
+fester System-Nachricht angestoßen — **das Modell wählt weiterhin selbst, welches
+Tool** (kein `tool_choice="required"`, da der DeepSeek-Thinking-Modus das nicht
+unterstützt). Kritische Statusänderungen (bereit) laufen zusätzlich über den
 deterministischen `POST /api/ready`.
+
+**DeepSeek Thinking-Modus:** Default `deepseek-v4-flash` läuft im Thinking-Modus
+(zuverlässiger bei Tool-Calls als das abgekündigte `deepseek-chat`). Der Code
+beachtet: kein `tool_choice="required"`; `reasoning_content` einer Tool-Call-Runde
+wird erfasst und im Folge-Kontext zurückgegeben (sonst bleibt die Schlussantwort
+leer); Fallback — läuft ein Tool ohne Schlussantwort, wird dessen Rückmeldung als
+Agenten-Antwort ausgegeben (`app/agents/person.py`, `app/llm/client.py`).
 
 ## 8. HTTP-/WS-API (`app/main.py`)
 

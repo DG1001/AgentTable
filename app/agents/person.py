@@ -132,18 +132,18 @@ async def handle_private_message(user_id: int, text: str) -> list[dict]:
     emitted: list[dict] = []
     ready_triggered = False
     nudged = False
-    force_required = False  # next round: make the model emit some tool call (it picks)
+    last_tool_reply = None
 
-    # allow a few tool-call rounds so the agent can act then confirm
+    # allow a few tool-call rounds so the agent can act then confirm.
+    # NOTE: tool_choice stays "auto" (never "required") — DeepSeek thinking-mode
+    # models reject "required"; instead we nudge with a firm system message.
     for _round in range(4):
         resp = await call_and_log(
             get_client("person"), messages, tools=tools,
-            tool_choice="required" if force_required else None,
             group_id=user["group_id"], task_id=task["id"] if task else None,
         )
-        force_required = False
         if resp.tool_calls:
-            messages.append({
+            asst = {
                 "role": "assistant",
                 "content": resp.content or "",
                 "tool_calls": [
@@ -151,7 +151,12 @@ async def handle_private_message(user_id: int, text: str) -> list[dict]:
                      "function": {"name": tc.name, "arguments": _json.dumps(tc.arguments)}}
                     for tc in resp.tool_calls
                 ],
-            })
+            }
+            # DeepSeek thinking-mode: the CoT of a tool-calling turn must be echoed
+            # back in the follow-up context (otherwise the final reply can be empty).
+            if resp.reasoning_content:
+                asst["reasoning_content"] = resp.reasoning_content
+            messages.append(asst)
             for tc in resp.tool_calls:
                 if tc.name in ("ask_admin", "ask_search", "ask_agent",
                                "start_smalltalk", "change_location"):
@@ -161,6 +166,7 @@ async def handle_private_message(user_id: int, text: str) -> list[dict]:
                     if result.triggered_ready:
                         ready_triggered = True
                     tool_msg = result.message
+                last_tool_reply = tool_msg  # fallback if the model gives no final text
                 messages.append({
                     "role": "tool", "tool_call_id": tc.id, "content": tool_msg,
                 })
@@ -168,22 +174,27 @@ async def handle_private_message(user_id: int, text: str) -> list[dict]:
 
         text = resp.content.strip()
         # Anti-phantom-action net: the model *claims* an action but emitted no tool
-        # call. Re-prompt once forcing a tool (tool_choice="required") — the MODEL
-        # picks which tool (routing stays the LLM's job, no keyword->tool map).
+        # call. Re-prompt once with a firm system message so it actually calls the
+        # tool — the MODEL picks which (routing stays the LLM's job, no keyword map).
         if tools and not nudged and _seems_to_promise_action(text):
             messages.append({"role": "assistant", "content": text})
             messages.append({"role": "system", "content": (
                 "Du hast eine Aktion angekündigt, aber KEINEN Tool-Call gemacht — es "
-                "ist also nichts passiert. Führe sie JETZT per passendem Tool aus "
-                "(du entscheidest, welches). Passt kein Tool, antworte einfach normal.")})
+                "ist also nichts passiert. Führe sie JETZT wirklich per passendem "
+                "Tool-Call aus (du entscheidest, welches). Passt kein Tool, antworte normal.")})
             nudged = True
-            force_required = True
             continue
 
         if text:
             repo.add_private_message(user_id, "agent", text)
             emitted.append({"role": "agent", "content": text})
         break
+
+    # If the model ran a tool but never produced a closing reply (can happen in
+    # thinking mode), relay the tool's own message so the user isn't left hanging.
+    if not emitted and last_tool_reply:
+        repo.add_private_message(user_id, "agent", last_tool_reply)
+        emitted.append({"role": "agent", "content": last_tool_reply})
 
     if ready_triggered and task:
         repo.set_agent_state(agent["id"], f"ready:{task['id']}", True)

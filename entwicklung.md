@@ -4,6 +4,25 @@
 > welcher Begründung getroffen wurden. Neueste Einträge oben.
 > Fachlich: [fachlich.md](fachlich.md) · Technisch: [technisch.md](technisch.md).
 
+## 2026-07-18 — Modell auf deepseek-v4-flash (Thinking) für zuverlässige Tool-Calls
+
+A/B-Test (Userwunsch): `deepseek-chat` phantomt bei Tool-Calls (z. B. Smalltalk),
+`deepseek-reasoner` ruft zuverlässig auf, ist aber **62 s** langsam (unbrauchbar)
+— und beide werden am 2026-07-24 abgekündigt (Aliase für `deepseek-v4-flash` ohne/
+mit Thinking). **`deepseek-v4-flash` (Thinking-Modus, ~1,5 s)** ist schnell *und*
+zuverlässig → neues Default-Modell für alle Rollen.
+
+Thinking-Modus-Anpassungen im Code:
+- Netz nudgt per System-Nachricht statt `tool_choice="required"` (Thinking
+  unterstützt „required" nicht → 400).
+- `LLMResponse.reasoning_content` erfasst; bei Tool-Call-Runden im Folge-Kontext
+  zurückgegeben (sonst leere Schlussantwort).
+- Fallback: Tool lief, aber keine Schlussantwort → Tool-Rückmeldung wird als
+  Agenten-Antwort ausgegeben.
+- `.env`: `LLM_MODEL=deepseek-v4-flash`; `.env.example` aktualisiert.
+- Admin-JSON (`response_format`) läuft im Thinking-Modus fehlerfrei; end-to-end
+  gegen DeepSeek verifiziert (Smalltalk, change_location+Antwort). 38 Tests grün.
+
 ## 2026-07-18 — Tisch-Emotes + reichere Sprites (prozedural, self-contained)
 
 Userwunsch: Emotes am Tisch; prüfen, ob freie Grafiken/SVG die Darstellung
