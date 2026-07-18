@@ -59,7 +59,7 @@ the admin LLM only writes prose and makes two structured decisions.
 
 **Stack:** Python 3.12+, FastAPI, Uvicorn, SQLite (no ORM, self-migrating),
 native WebSockets, a build-step-free vanilla-JS SPA, and an OpenAI-compatible LLM
-client. See [`technisch.md`](technisch.md) for the full technical write-up.
+client. See [`technisch.md`](docs/technisch.md) for the full technical write-up.
 
 ## 🚀 Quick start
 
@@ -133,10 +133,10 @@ run.py          dev entrypoint (binds 0.0.0.0, reloader off)
 
 ## 📚 Docs
 
-- [`fachlich.md`](fachlich.md) — product / domain view (German)
-- [`technisch.md`](technisch.md) — architecture & internals (German)
-- [`entwicklung.md`](entwicklung.md) — development log with decisions (German)
-- [`spec.md`](spec.md) — original project brief (German)
+- [`fachlich.md`](docs/fachlich.md) — product / domain view (German)
+- [`technisch.md`](docs/technisch.md) — architecture & internals (German)
+- [`entwicklung.md`](docs/entwicklung.md) — development log with decisions (German)
+- [`spec.md`](docs/spec.md) — original project brief (German)
 
 ## 📄 License
 

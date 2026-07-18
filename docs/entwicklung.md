@@ -4,6 +4,15 @@
 > welcher Begründung getroffen wurden. Neueste Einträge oben.
 > Fachlich: [fachlich.md](fachlich.md) · Technisch: [technisch.md](technisch.md).
 
+## 2026-07-18 — Doku: deutsche Markdowns nach `docs/` verschoben
+
+Aufräumen des Repo-Roots (Userwunsch): die deutschen Docs `fachlich.md`,
+`technisch.md`, `entwicklung.md` und `spec.md` per `git mv` nach `docs/` verschoben
+(dort lag bereits `demo.png`). Im Root bleiben nur `README.md` (GitHub-Konvention)
+und `AGENTS.md` (Workspace-Konvention). Die README-Doc-Links auf `docs/…`
+angepasst; die relativen Querverweise der Docs untereinander bleiben gültig, da sie
+gemeinsam umgezogen sind. Reine Datei-/Link-Änderung, kein Code betroffen.
+
 ## 2026-07-18 — Gedächtnis: intelligente Konsolidierung + Einträge löschen
 
 Beobachtung: Tippfehler-Korrekturen legten neue Einträge an (nur exakt-Dedupe).
