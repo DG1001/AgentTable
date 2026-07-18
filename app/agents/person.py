@@ -159,8 +159,10 @@ async def handle_private_message(user_id: int, text: str) -> list[dict]:
                 asst["reasoning_content"] = resp.reasoning_content
             messages.append(asst)
             for tc in resp.tool_calls:
-                if tc.name in ("ask_admin", "ask_search", "ask_agent",
-                               "start_smalltalk", "change_location"):
+                if tc.name == "remember":
+                    tool_msg = await remember_fact(user, tc.arguments.get("fact") or "")
+                elif tc.name in ("ask_admin", "ask_search", "ask_agent",
+                                 "start_smalltalk", "change_location"):
                     tool_msg = await _handle_room_tool(user, task, tc.name, tc.arguments)
                 else:
                     result = apply_tool_call(user_id, tc.name, tc.arguments, params)
@@ -239,6 +241,38 @@ async def answer_question(agent, task, question: str, asker_name: str, db=None) 
         group_id=user["group_id"], task_id=task["id"] if task else None,
     )
     return resp.content.strip() or "(keine Antwort)"
+
+
+async def remember_fact(user, fact: str, db=None) -> str:
+    """Store a durable fact — but LLM-consolidate against existing memories so
+    typo-corrections / rephrasings update instead of piling up duplicates."""
+    fact = (fact or "").strip()
+    if not fact:
+        return "Leere Info — nichts zu merken."
+    existing = [r["content"] for r in repo.list_memories(user["id"], db=db)]
+    if not existing:
+        repo.add_memory(user["id"], fact, db=db)
+        return f"Gemerkt: {fact}"
+    prompt = render(
+        "memory_consolidate",
+        display_name=user["display_name"],
+        existing="\n".join(f"- {m}" for m in existing),
+        new=fact,
+    )
+    try:
+        resp = await call_and_log(
+            get_client("person"), [{"role": "user", "content": prompt}],
+            group_id=user["group_id"],
+        )
+        lines = [ln.strip(" -*•\t") for ln in resp.content.splitlines()]
+        lines = [ln for ln in lines if ln]
+    except Exception:  # noqa: BLE001 — never lose the fact on an LLM error
+        lines = []
+    if lines:
+        repo.replace_memories(user["id"], lines, db=db)
+        return "Gemerkt und mit meinen bisherigen Notizen abgeglichen."
+    repo.add_memory(user["id"], fact, db=db)  # fallback: plain add
+    return f"Gemerkt: {fact}"
 
 
 async def _handle_room_tool(user, task, name: str, args: dict) -> str:

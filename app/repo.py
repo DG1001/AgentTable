@@ -103,6 +103,29 @@ def delete_memory(memory_id: int, db: Database | None = None) -> None:
     _db(db).execute("DELETE FROM user_memory WHERE id = ?", (memory_id,))
 
 
+def delete_user_memory(user_id: int, memory_id: int, db: Database | None = None) -> bool:
+    """Delete one memory, scoped to its owner. Returns True if a row was removed."""
+    cur = _db(db).execute(
+        "DELETE FROM user_memory WHERE id = ? AND user_id = ?", (memory_id, user_id)
+    )
+    return cur.rowcount > 0
+
+
+def replace_memories(user_id: int, contents: list[str], cap: int = 50, db: Database | None = None) -> None:
+    """Replace a user's whole memory list (used after LLM consolidation)."""
+    d = _db(db)
+    d.execute("DELETE FROM user_memory WHERE user_id = ?", (user_id,))
+    seen: set[str] = set()
+    for c in contents:
+        c = (c or "").strip()
+        if not c or c.lower() in seen:
+            continue
+        seen.add(c.lower())
+        d.execute("INSERT INTO user_memory (user_id, content) VALUES (?, ?)", (user_id, c))
+        if len(seen) >= cap:
+            break
+
+
 # --- agents ---------------------------------------------------------------
 def create_agent(
     group_id: int,

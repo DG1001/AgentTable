@@ -205,6 +205,20 @@ def test_seems_to_promise_action():
     assert not _seems_to_promise_action("Welcher Wochentag passt dir am besten?")
 
 
+async def test_remember_fact_consolidates(db, mock_llm):
+    """A typo-correction/rephrasing must update the memory, not pile up duplicates."""
+    from app.llm.client import LLMResponse
+    from app.agents.person import remember_fact
+    _, members = bootstrap_group("Runde", ["Alex"])
+    user = repo.get_user(members[0]["user_id"])
+    await remember_fact(user, "wohnt in Neenstein")  # first (no existing) -> plain add
+    assert [m["content"] for m in repo.list_memories(user["id"])] == ["wohnt in Neenstein"]
+    # consolidation LLM returns the corrected single line
+    mock_llm.router = lambda role, m, t, rf: LLMResponse(content="Wohnt in Neuenstein/Hohenlohe")
+    await remember_fact(user, "Korrektur: Neuenstein, nicht Neenstein")
+    assert [m["content"] for m in repo.list_memories(user["id"])] == ["Wohnt in Neuenstein/Hohenlohe"]
+
+
 async def test_budget_scoped_to_negotiation(db, mock_llm):
     """Heavy collecting-phase usage (ask_* chatter) must NOT block negotiation —
     the budget only counts calls made after negotiation starts."""

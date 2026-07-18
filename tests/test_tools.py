@@ -120,6 +120,18 @@ def test_migration_v3_user_memory_table(db):
     assert "content" in cols and "user_id" in cols
 
 
+def test_delete_user_memory_scoped(db):
+    from app.service import bootstrap_group
+    _, members = bootstrap_group("G", ["A", "B"])
+    ua, ub = members[0]["user_id"], members[1]["user_id"]
+    repo.add_memory(ua, "fact a")
+    mid = repo.list_memories(ua)[0]["id"]
+    assert repo.delete_user_memory(ub, mid) is False   # B can't delete A's memory
+    assert len(repo.list_memories(ua)) == 1
+    assert repo.delete_user_memory(ua, mid) is True     # owner can
+    assert repo.list_memories(ua) == []
+
+
 def test_invalid_preference_rejected(db):
     uid = _user(db)
     res = apply_tool_call(uid, "set_availability", {

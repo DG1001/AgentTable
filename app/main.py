@@ -65,7 +65,7 @@ def me(request: Request):
         "agents": [serialize.agent_public(a) for a in repo.list_agents(user["group_id"])],
         "task": serialize.task_public(task),
         "ready": ready,
-        "memories": [m["content"] for m in repo.list_memories(user["id"])],
+        "memories": [{"id": m["id"], "content": m["content"]} for m in repo.list_memories(user["id"])],
     }
 
 
@@ -95,6 +95,13 @@ def _since(request: Request) -> int | None:
         return int(raw) if raw not in (None, "") else None
     except ValueError:
         return None
+
+
+@api.delete("/memory/{memory_id}")
+def delete_memory(memory_id: int, request: Request):
+    user = _require_user(request)
+    ok = repo.delete_user_memory(user["id"], memory_id)
+    return {"ok": ok}
 
 
 @api.get("/private/history")

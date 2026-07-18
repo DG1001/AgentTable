@@ -4,6 +4,21 @@
 > welcher Begründung getroffen wurden. Neueste Einträge oben.
 > Fachlich: [fachlich.md](fachlich.md) · Technisch: [technisch.md](technisch.md).
 
+## 2026-07-18 — Gedächtnis: intelligente Konsolidierung + Einträge löschen
+
+Beobachtung: Tippfehler-Korrekturen legten neue Einträge an (nur exakt-Dedupe).
+- **Konsolidierung:** `remember` läuft jetzt async über `person.remember_fact` —
+  ein kurzer LLM-Schritt (`memory_consolidate.md`) integriert die neue Info in die
+  bestehende Liste (dedupliziert, korrigiert Tippfehler, führt zusammen, behält die
+  vollständigste Formulierung), dann `repo.replace_memories`. Fallback bei
+  LLM-Fehler: einfaches Anhängen. Erster Eintrag ohne Liste: direktes Add.
+  Real verifiziert (Neenstein→Neuenstein zusammengeführt; „kommt aus…" nicht
+  dupliziert; neuer Fakt separat).
+- **Einzeln löschen:** `DELETE /api/memory/{id}` (nutzer-gescoped,
+  `repo.delete_user_memory`); `/api/me.memories` liefert `{id, content}`; Frontend
+  zeigt pro Eintrag einen ×-Button (`forgetMemory`). Tests (Konsolidierung,
+  gescoptes Löschen) — 44 grün.
+
 ## 2026-07-18 — Admin-Dashboard (`/admin`, Passwort aus ENV)
 
 Userwunsch: kleine Admin-Seite mit Passwort aus der ENV.

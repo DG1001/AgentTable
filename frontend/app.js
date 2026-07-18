@@ -163,7 +163,14 @@ function renderMemories(list) {
   if (!list || !list.length) { box.classList.add("hidden"); return; }
   box.classList.remove("hidden");
   qs("#memory-count").textContent = list.length;
-  qs("#memory-list").innerHTML = list.map((m) => `<li>${renderMarkdown(m)}</li>`).join("");
+  qs("#memory-list").innerHTML = list.map((m) =>
+    `<li><span>${renderMarkdown(m.content)}</span>`
+    + `<button class="forget" title="Vergessen" onclick="forgetMemory(${m.id})">×</button></li>`
+  ).join("");
+}
+async function forgetMemory(id) {
+  try { await fetch(apiUrl(`memory/${id}`), { method: "DELETE" }); } catch {}
+  refreshMe();
 }
 
 async function refreshMe() {
