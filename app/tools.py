@@ -143,6 +143,27 @@ TOOL_SCHEMAS: list[dict] = [
     {
         "type": "function",
         "function": {
+            "name": "change_location",
+            "description": (
+                "Ändert oder ENTFERNT den Ort des bereits ENTSCHIEDENEN Termins — "
+                "der Organisator setzt das wirklich um (Datum bleibt). Für 'raus'/"
+                "'entfernen' das Feld leer lassen. NICHT zum Suchen neuer Orte "
+                "verwenden (dafür ask_search)."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {
+                        "type": "string",
+                        "description": "Neuer Ort; leer lassen, um den Ort zu entfernen.",
+                    }
+                },
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "ask_search",
             "description": (
                 "Stellt dem Such-Agenten im Gruppenraum eine konkrete Recherche-Frage "
@@ -165,7 +186,7 @@ TOOL_SCHEMAS: list[dict] = [
 
 # The three "ask" tools are useful any time (also after a decision, e.g. to ask
 # the searcher for a venue); the scheduling tools only make sense during a task.
-_ASK_NAMES = {"ask_admin", "ask_agent", "ask_search", "start_smalltalk"}
+_ASK_NAMES = {"ask_admin", "ask_agent", "ask_search", "start_smalltalk", "change_location"}
 ASK_TOOL_SCHEMAS = [t for t in TOOL_SCHEMAS if t["function"]["name"] in _ASK_NAMES]
 SCHEDULING_TOOL_SCHEMAS = [t for t in TOOL_SCHEMAS if t["function"]["name"] not in _ASK_NAMES]
 

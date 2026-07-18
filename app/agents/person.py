@@ -15,36 +15,25 @@ from app.tools import ASK_TOOL_SCHEMAS, TOOL_SCHEMAS, apply_tool_call
 # how many user turns the onboarding lasts before we synthesise a persona
 ONBOARDING_TURNS = 3
 
-# The model frequently *claims* a room action ("ich hab den Rechercheur gefragt")
-# without emitting the tool call. When the text is about search/organizer intent
-# and no tool ran this turn, we force exactly that tool on a follow-up round.
-_SEARCH_HINTS = (
-    "rechercheur", "recherche", "such", "gesucht", "location", "locations", "bar",
-    "restaurant", "kneipe", "lokal", "biergarten", "café", "cafe",
-)
-_ADMIN_HINTS = (
-    "organisator", "orga ", "anstoß", "angestoß", "losgehen", "loslegen",
-    "vorschlag machen", "stand der", "wer noch fehlt", "starten kann",
-)
-_SMALLTALK_HINTS = (
-    "smalltalk", "small talk", "quatsch", "plausch", "labern", "schnack", "geplauder",
+# Tool ROUTING is the LLM's job (via the tool descriptions). We only keep a
+# tool-agnostic safety net against "phantom actions": the model claims/announces
+# it did something ("erledigt", "ich frag den Rechercheur", "ist raus") but emits
+# no tool call. When that happens we re-prompt once with tool_choice="required" so
+# the model MUST act — but the model still chooses WHICH tool. No keyword->tool map.
+_ACTION_CLAIMS = (
+    "erledigt", "ist raus", "ist dran", "losgeschickt", "rausgeschickt", "abgeschickt",
+    "weitergeleitet", "gespeichert", "notiert", "eingetragen", "ich frag", "ich frage",
+    "ich schick", "ich stoße", "ich stosse", "ich leite", "ich hole", "ich kümmere",
+    "ich kuemmere", "gib mir einen moment", "gib mir kurz", "einen moment noch",
+    "sobald er", "sobald sie", "mach ich gleich", "ich habe das", "ich hab das",
 )
 
 
-def _forced_tool_for(text: str, include_smalltalk: bool = False) -> str | None:
-    """Map text to the room tool that should be called.
-
-    start_smalltalk is only matched when ``include_smalltalk`` is set — used for
-    the USER's message, so an explicit 'mach Smalltalk' forces it, while a casual
-    word in the model's own reply does NOT spuriously kick one off."""
+def _seems_to_promise_action(text: str) -> bool:
+    """True if the reply *claims/announces* an action — used only to decide whether
+    to nudge the model to actually emit a tool call (never which tool)."""
     t = text.lower()
-    if include_smalltalk and any(h in t for h in _SMALLTALK_HINTS):
-        return "start_smalltalk"
-    if any(h in t for h in _SEARCH_HINTS):
-        return "ask_search"
-    if any(h in t for h in _ADMIN_HINTS):
-        return "ask_admin"
-    return None
+    return any(p in t for p in _ACTION_CLAIMS)
 
 
 async def _run_onboarding(user, agent) -> str:
@@ -136,23 +125,17 @@ async def handle_private_message(user_id: int, text: str) -> list[dict]:
     emitted: list[dict] = []
     ready_triggered = False
     nudged = False
-    called_tools: set[str] = set()
-    forced_choice: dict | None = None
-    # Intent from the USER's message is far more stable than the model's varying
-    # reply wording — use it as the primary signal for forcing a room tool.
-    # Small talk is only forced from the user's own explicit request.
-    user_intent = _forced_tool_for(text, include_smalltalk=True)
+    force_required = False  # next round: make the model emit some tool call (it picks)
 
     # allow a few tool-call rounds so the agent can act then confirm
     for _round in range(4):
         resp = await call_and_log(
             get_client("person"), messages, tools=tools,
-            tool_choice=forced_choice,
+            tool_choice="required" if force_required else None,
             group_id=user["group_id"], task_id=task["id"] if task else None,
         )
-        forced_choice = None
+        force_required = False
         if resp.tool_calls:
-            called_tools.update(tc.name for tc in resp.tool_calls)
             messages.append({
                 "role": "assistant",
                 "content": resp.content or "",
@@ -163,7 +146,8 @@ async def handle_private_message(user_id: int, text: str) -> list[dict]:
                 ],
             })
             for tc in resp.tool_calls:
-                if tc.name in ("ask_admin", "ask_search", "ask_agent", "start_smalltalk"):
+                if tc.name in ("ask_admin", "ask_search", "ask_agent",
+                               "start_smalltalk", "change_location"):
                     tool_msg = await _handle_room_tool(user, task, tc.name, tc.arguments)
                 else:
                     result = apply_tool_call(user_id, tc.name, tc.arguments, params)
@@ -176,20 +160,17 @@ async def handle_private_message(user_id: int, text: str) -> list[dict]:
             continue
 
         text = resp.content.strip()
-        # Anti-phantom-action guard: the user asked for a room action (or the
-        # model claims one) but the matching tool never ran this turn — force it.
-        forced_tool = None
-        if tools and not nudged:
-            forced_tool = user_intent or _forced_tool_for(text)
-            if forced_tool in called_tools:
-                forced_tool = None
-        if forced_tool:
+        # Anti-phantom-action net: the model *claims* an action but emitted no tool
+        # call. Re-prompt once forcing a tool (tool_choice="required") — the MODEL
+        # picks which tool (routing stays the LLM's job, no keyword->tool map).
+        if tools and not nudged and _seems_to_promise_action(text):
             messages.append({"role": "assistant", "content": text})
             messages.append({"role": "system", "content": (
-                f"Du hast eine Aktion angekündigt, aber KEINEN Tool-Call gemacht — es "
-                f"ist also nichts passiert. Führe sie JETZT per {forced_tool} aus.")})
+                "Du hast eine Aktion angekündigt, aber KEINEN Tool-Call gemacht — es "
+                "ist also nichts passiert. Führe sie JETZT per passendem Tool aus "
+                "(du entscheidest, welches). Passt kein Tool, antworte einfach normal.")})
             nudged = True
-            forced_choice = {"type": "function", "function": {"name": forced_tool}}
+            force_required = True
             continue
 
         if text:
@@ -256,6 +237,9 @@ async def _handle_room_tool(user, task, name: str, args: dict) -> str:
 
     if name == "start_smalltalk":
         return await moderator.start_smalltalk(user, args.get("topic") or "")
+
+    if name == "change_location":
+        return await moderator.handle_location_change(user, args.get("location") or "")
 
     if name == "ask_agent":
         group_id = user["group_id"]

@@ -146,6 +146,47 @@ async def test_smalltalk_blocked_only_during_negotiation(db, mock_llm):
     assert "verhandeln" in (smalltalk_block_reason(group_id) or "")  # negotiating -> blocked
 
 
+async def test_change_location_updates_decided_task(db, mock_llm):
+    from app.moderator import handle_location_change
+    group_id, members = bootstrap_group("Runde", ["Alex"])
+    tid = repo.create_task(group_id, PARAMS)
+    repo.update_task_status(tid, "decided", result={
+        "slot": {"start": "2026-07-21T18:00", "end": "2026-07-21T22:00", "label": "Di 21.07. abends"},
+        "location": "Midnightbazar", "summary": "passt"})
+    user = repo.get_user(members[0]["user_id"])
+
+    # change venue
+    msg = await handle_location_change(user, "Zum Tilgshäusle")
+    import json
+    assert json.loads(repo.get_task(tid)["result_json"])["location"] == "Zum Tilgshäusle"
+    assert "geändert" in msg
+    assert any("Ort geändert" in r["content"] for r in repo.list_room_messages(group_id))
+
+    # remove venue (empty)
+    await handle_location_change(user, "")
+    assert json.loads(repo.get_task(tid)["result_json"])["location"] is None
+
+
+async def test_change_location_refused_when_not_decided(db, mock_llm):
+    from app.moderator import handle_location_change
+    group_id, members = bootstrap_group("Runde", ["Alex"])
+    repo.create_task(group_id, PARAMS)  # collecting
+    msg = await handle_location_change(repo.get_user(members[0]["user_id"]), "X")
+    assert "kein termin" in msg.lower()
+
+
+def test_seems_to_promise_action():
+    """Tool-agnostic phantom-action detector (decides whether to nudge, not which
+    tool — routing is the LLM's job)."""
+    from app.agents.person import _seems_to_promise_action
+    assert _seems_to_promise_action("Ist erledigt! Midnightbazar ist raus.")
+    assert _seems_to_promise_action("Klar, ich frag den Rechercheur.")
+    assert _seems_to_promise_action("Hab ich gespeichert, notiert.")
+    # plain conversational replies must NOT trigger a forced tool
+    assert not _seems_to_promise_action("Cool, klingt gut!")
+    assert not _seems_to_promise_action("Welcher Wochentag passt dir am besten?")
+
+
 async def test_budget_scoped_to_negotiation(db, mock_llm):
     """Heavy collecting-phase usage (ask_* chatter) must NOT block negotiation —
     the budget only counts calls made after negotiation starts."""

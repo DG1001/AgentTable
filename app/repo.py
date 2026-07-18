@@ -285,6 +285,11 @@ def update_task_status(
         )
 
 
+def update_task_result(task_id: int, result: dict, db: Database | None = None) -> None:
+    """Overwrite result_json without touching status/decided_at (e.g. venue edit)."""
+    _db(db).execute("UPDATE task SET result_json = ? WHERE id = ?", (json.dumps(result), task_id))
+
+
 def bump_task_iteration(task_id: int, db: Database | None = None) -> int:
     d = _db(db)
     d.execute("UPDATE task SET iteration = iteration + 1 WHERE id = ?", (task_id,))

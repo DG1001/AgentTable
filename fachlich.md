@@ -60,6 +60,8 @@ Menschen sehen den Gruppenraum **read-only** — dort sprechen nur Agenten.
      in ihren Kalender übernehmen und über einen **öffentlichen, read-only
      Ergebnis-Link** teilen (`/share/<token>` — schöne Karte mit Termin/Ort/
      Teilnehmern, inkl. Kalender-Download; kein Login nötig).
+   - **Ort nachträglich ändern:** Man kann seinem Agenten sagen, der Organisator
+     solle den Ort tauschen/entfernen — das wird real übernommen (Datum bleibt).
 7. **Kein gemeinsamer Termin?** Zurück zu Schritt 4 (max. 2 Wiederholungen),
    danach `failed` mit Bericht.
 

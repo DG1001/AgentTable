@@ -4,6 +4,31 @@
 > welcher Begründung getroffen wurden. Neueste Einträge oben.
 > Fachlich: [fachlich.md](fachlich.md) · Technisch: [technisch.md](technisch.md).
 
+## 2026-07-18 — Ort ändern + Tool-Routing dem LLM überlassen
+
+Beobachtung (Screenshot): „bitte die location anpassen, midnightbazar raus" ging
+an den **Rechercheur** (`ask_search`), der nur suchen kann und „entfernt"
+halluzinierte; der Agent meldete falsch „erledigt". Drei Ursachen: falsches
+Routing (Keyword „location" erzwang Suche), **fehlende Fähigkeit** (Ort eines
+entschiedenen Termins ändern), Phantom-„erledigt".
+
+Fixes:
+- **Neue Fähigkeit `change_location(location)`** → `moderator.handle_location_change`:
+  ändert/entfernt `result_json.location` (kein Status/decided_at-Wechsel, neue
+  `repo.update_task_result`), postet „📍 Ort geändert …" im Raum, benachrichtigt;
+  No-Op-Guard bei gleichem Ort.
+- **Routing-Redesign (Userwunsch „soll das LLM entscheiden"):** Das
+  Keyword→Tool-Mapping (`_forced_tool_for`, `_SEARCH/ADMIN/SMALLTALK_HINTS`,
+  `_wants_location_change`) **entfernt**. Welches Tool läuft, entscheidet jetzt das
+  Modell über die Tool-Beschreibungen. Nur noch ein **tool-agnostisches**
+  Phantom-Netz (`_seems_to_promise_action`): kündigt das Modell eine Aktion an,
+  ohne ein Tool zu rufen, → ein Durchgang mit `tool_choice="required"`, **Modell
+  wählt das Tool selbst**.
+- Prompt: `ask_search` nur zum FINDEN, `change_location` zum ÄNDERN.
+- Real gegen DeepSeek verifiziert: „location ändern" routet nun korrekt zu
+  change_location (Organisator ändert wirklich), keine falschen „erledigt"-Claims.
+  Tests: `_seems_to_promise_action`, `handle_location_change` (38 grün).
+
 ## 2026-07-18 — Milestone 1: Ergebnis nutzbar machen (ICS + teilbare Karte)
 
 Ziel: den entschiedenen Termin über die App hinaus nutzbar machen (User-Wunsch,

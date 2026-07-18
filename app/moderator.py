@@ -301,6 +301,34 @@ async def _run_smalltalk(group_id: int, topic: str, initiator: str) -> None:
         _smalltalk_active.discard(group_id)
 
 
+async def handle_location_change(user, location: str) -> str:
+    """Change/clear the venue of the decided meeting (organizer does it for real)."""
+    group_id = user["group_id"]
+    task = repo.latest_task(group_id)
+    if task is None or task["status"] != "decided":
+        return ("Es steht noch kein Termin fest, an dem ich den Ort ändern könnte. "
+                "Das geht erst, wenn die Terminfindung entschieden ist.")
+    admin = repo.get_agent_by_kind(group_id, "admin")
+    result = json.loads(task["result_json"]) if task["result_json"] else {}
+    old = result.get("location")
+    new = (location or "").strip() or None
+    if new == old:  # no-op (e.g. model re-calls the tool) — don't spam the room
+        return f"Der Ort ist bereits {new}." if new else "Es ist aktuell kein Ort gesetzt."
+    result["location"] = new
+    repo.update_task_result(task["id"], result)
+    label = result.get("slot", {}).get("label", "der Termin")
+    if new:
+        msg = f"📍 Ort geändert: {old or '—'} → {new} ({label} bleibt)."
+    else:
+        msg = f"📍 Ort '{old or '—'}' entfernt — der Ort für {label} wird neu geklärt."
+    await post_room(group_id, msg, agent_id=admin["id"])
+    await broadcast_task(repo.get_task(task["id"]))
+    for a in repo.list_person_agents(group_id):
+        await notify_user_private(a["user_id"], msg)
+    log.info("task %s location changed: %r -> %r", task["id"], old, new)
+    return msg
+
+
 def _collecting_timed_out(task) -> bool:
     created = datetime.fromisoformat(task["created_at"])
     return datetime.utcnow() >= created + timedelta(hours=settings.collecting_timeout_hours)

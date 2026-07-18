@@ -166,12 +166,18 @@ Function-Calling-Schemas (deutsch beschrieben), Validierung strikt in Code:
   werden in `person.py` async behandelt (nicht in `apply_tool_call`) und sind
   **immer** verfügbar (`ASK_TOOL_SCHEMAS`); Scheduling-Tools nur bei aktivem Task.
 
-**Anti-Phantom-Action (Robustheit):** LLMs (v. a. deepseek-chat) behaupten
-manchmal eine Aktion, ohne den Tool-Call abzusetzen. `handle_private_message`
-leitet die Absicht primär aus der **User-Nachricht** ab; wurde das passende Tool
-im Zug nicht aufgerufen, wird es per `tool_choice` erzwungen (durch die
-LLM-Abstraktion gereicht). Kritische Statusänderungen (bereit) laufen zusätzlich
-über den deterministischen `POST /api/ready`.
+- `change_location(location)` — ändert/entfernt den Ort des **entschiedenen**
+  Termins (`moderator.handle_location_change` aktualisiert `result_json`, postet
+  im Raum, benachrichtigt); No-Op-Guard bei gleichem Ort. Leer = entfernen.
+
+**Tool-Routing = LLM-Sache.** Welches Tool aufgerufen wird, entscheidet das Modell
+anhand der Tool-Beschreibungen (kein Keyword→Tool-Mapping — das führte zu
+Fehl-Routing, z. B. „location ändern" → fälschlich Suche). **Anti-Phantom-Netz:**
+behauptet das Modell eine Aktion, ohne ein Tool aufzurufen
+(`_seems_to_promise_action`, tool-*agnostisch*), wird **ein** Folge-Durchgang mit
+`tool_choice="required"` erzwungen — **das Modell wählt weiterhin selbst, welches
+Tool**. Kritische Statusänderungen (bereit) laufen zusätzlich über den
+deterministischen `POST /api/ready`.
 
 ## 8. HTTP-/WS-API (`app/main.py`)
 
