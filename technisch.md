@@ -181,11 +181,15 @@ unterstützt). Kritische Statusänderungen (bereit) laufen zusätzlich über den
 deterministischen `POST /api/ready`.
 
 **DeepSeek Thinking-Modus:** Default `deepseek-v4-flash` läuft im Thinking-Modus
-(zuverlässiger bei Tool-Calls als das abgekündigte `deepseek-chat`). Der Code
-beachtet: kein `tool_choice="required"`; `reasoning_content` einer Tool-Call-Runde
-wird erfasst und im Folge-Kontext zurückgegeben (sonst bleibt die Schlussantwort
-leer); Fallback — läuft ein Tool ohne Schlussantwort, wird dessen Rückmeldung als
-Agenten-Antwort ausgegeben (`app/agents/person.py`, `app/llm/client.py`).
+(zuverlässiger bei Tool-Calls als das abgekündigte `deepseek-chat`). Der Client
+**pinnt** das explizit (DeepSeek-gated über die Base-URL): `extra_body={"thinking":
+{"type":"enabled"}, "reasoning_effort":"high"}` — schützt vor Default-Änderungen
+und vor versehentlichem `max` (langsam). Weitere Beachtung: kein
+`tool_choice="required"` (Thinking lehnt es ab); `reasoning_content` einer
+Tool-Call-Runde wird erfasst und im Folge-Kontext zurückgegeben (sonst leere
+Schlussantwort); Fallback — läuft ein Tool ohne Schlussantwort, wird dessen
+Rückmeldung als Agenten-Antwort ausgegeben (`app/agents/person.py`,
+`app/llm/client.py`). `temperature` ist im Thinking-Modus wirkungslos.
 
 ## 8. HTTP-/WS-API (`app/main.py`)
 

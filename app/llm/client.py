@@ -60,6 +60,11 @@ class OpenAICompatibleClient:
         from openai import AsyncOpenAI
 
         self.role_config = role_config
+        # DeepSeek: pin thinking-mode ON + effort=high explicitly (don't ride the
+        # provider defaults — guards against them changing or auto-escalating to
+        # 'max', which is far slower). DeepSeek-gated so other OpenAI-compatible
+        # providers stay untouched.
+        self._is_deepseek = "deepseek" in (role_config.base_url or "").lower()
         self._client = AsyncOpenAI(
             api_key=role_config.api_key,
             base_url=role_config.base_url,
@@ -83,6 +88,13 @@ class OpenAICompatibleClient:
             kwargs["tool_choice"] = tool_choice or "auto"
         if response_format:
             kwargs["response_format"] = response_format
+        if self._is_deepseek:
+            # thinking enabled, effort 'high' (not 'max'). extra_body merges these
+            # as top-level body fields; temperature is ignored in thinking mode.
+            kwargs["extra_body"] = {
+                "thinking": {"type": "enabled"},
+                "reasoning_effort": "high",
+            }
 
         last_exc: Exception | None = None
         for attempt in range(settings.max_retries):
