@@ -4,6 +4,15 @@
 > welcher Begründung getroffen wurden. Neueste Einträge oben.
 > Fachlich: [fachlich.md](fachlich.md) · Technisch: [technisch.md](technisch.md).
 
+## 2026-07-18 — Admin-Dashboard (`/admin`, Passwort aus ENV)
+
+Userwunsch: kleine Admin-Seite mit Passwort aus der ENV.
+- `GET /admin` (HTTP Basic Auth gegen `ADMIN_PASSWORD`; leer → 404/deaktiviert).
+  Read-only: Gruppen, Termin-Status, Mitglieder (Persona-/Memory-Zähler, klickbare
+  Magic-Links), LLM-Calls/Tokens gesamt. Self-contained HTML.
+- `config.py`: `admin_password`; `.env.example`: `ADMIN_PASSWORD=`.
+- Getestet: 401 ohne/falsch, 200 mit korrektem PW; Dashboard rendert (Screenshot).
+
 ## 2026-07-18 — Langzeit-Gedächtnis der Personen-Agenten
 
 Userwunsch: Personas lernen aus dem Gespräch und merken sich Dinge session-

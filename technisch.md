@@ -223,6 +223,14 @@ sodass beim Nachladen nichts doppelt erscheint.
 Static & Login: `GET /` liefert das SPA und setzt bei gültigem `?t=` das Cookie;
 unbekanntes Token → 404-Fehlerseite. `GET /health` für Checks.
 
+**Admin-Dashboard** `GET /admin` (HTTP Basic Auth, Passwort aus `ADMIN_PASSWORD`;
+leer → 404/deaktiviert): read-only Übersicht — Gruppen, Termin-Status, Mitglieder
+mit Persona-/Memory-Zähler und klickbaren Magic-Links, LLM-Calls/Tokens gesamt.
+
+**Langzeit-Gedächtnis:** Tabelle `user_memory` (Schema v3), Tool `remember(fact)`
+(via `apply_tool_call`, immer verfügbar), injiziert als `{memory}` in die
+person-/smalltalk-Prompts (`context.user_memory_text`), in `/api/me` als `memories`.
+
 Optionaler `BASE_PATH` mountet die App unter einem Sub-Pfad (nginx).
 
 ## 9. Frontend (`frontend/`)

@@ -6,8 +6,10 @@ optional ``BASE_PATH`` so it can sit behind an nginx sub-path with WS upgrade.
 from __future__ import annotations
 
 import asyncio
+import base64
 import json
 import logging
+import secrets
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
@@ -295,6 +297,82 @@ def share_card(token: str, request: Request):
             "<h1>Nicht gefunden</h1><p>Dieser Ergebnis-Link ist ungültig oder der "
             "Termin steht noch nicht fest.</p>", status_code=404)
     return HTMLResponse(_share_card_html(task, request))
+
+
+# --- minimal admin dashboard (HTTP Basic Auth, password from ADMIN_PASSWORD) ---
+def _check_admin(request: Request) -> bool:
+    if not settings.admin_password:
+        return False
+    auth = request.headers.get("Authorization", "")
+    if not auth.startswith("Basic "):
+        return False
+    try:
+        pw = base64.b64decode(auth[6:]).decode("utf-8").partition(":")[2]
+    except Exception:  # noqa: BLE001
+        return False
+    return secrets.compare_digest(pw, settings.admin_password)
+
+
+def _admin_html(request: Request) -> str:
+    import html as _h
+
+    base = str(request.base_url).rstrip("/")
+    db = repo.get_db()
+    u = db.query_one("SELECT COUNT(*) c, COALESCE(SUM(prompt_tokens+completion_tokens),0) t FROM llm_usage")
+    rows = ""
+    for g in repo.list_groups():
+        task = repo.latest_task(g["id"])
+        tinfo = "—"
+        if task:
+            res = json.loads(task["result_json"]) if task["result_json"] else {}
+            slot = res.get("slot", {}).get("label", "")
+            loc = res.get("location") or ""
+            tinfo = f'<span class="s {task["status"]}">{task["status"]}</span> {_h.escape(slot)}'
+            if loc:
+                tinfo += f" @ {_h.escape(loc)}"
+        members = ""
+        for usr in repo.list_users(g["id"]):
+            mem = len(repo.list_memories(usr["id"]))
+            link = f'{base}/?t={usr["token"]}'
+            members += (f'<tr><td>{_h.escape(usr["display_name"])}</td>'
+                        f'<td>{"✓" if usr["persona"] else "—"}</td><td>{mem}</td>'
+                        f'<td><a href="{_h.escape(link)}">{_h.escape(usr["token"][:10])}…</a></td></tr>')
+        rows += (f'<section class="grp"><h2>{_h.escape(g["name"])} '
+                 f'<small>#{g["id"]}</small></h2><div class="task">Termin: {tinfo}</div>'
+                 f'<table><thead><tr><th>Person</th><th>Persona</th><th>🧠</th>'
+                 f'<th>Magic-Link</th></tr></thead><tbody>{members}</tbody></table></section>')
+
+    return f"""<!doctype html><html lang="de"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>AgentTable Admin</title>
+<style>
+ body{{font-family:system-ui,sans-serif;margin:0;background:#f4f1ec;color:#2d3142}}
+ header{{background:#2d3142;color:#fff;padding:14px 20px}} header h1{{margin:0;font-size:1.2rem}}
+ main{{max-width:900px;margin:0 auto;padding:16px 20px}}
+ .stat{{background:#fff;border:1px solid #e3ddd2;border-radius:10px;padding:12px 16px;margin-bottom:16px}}
+ .grp{{background:#fff;border:1px solid #e3ddd2;border-radius:10px;padding:12px 16px;margin-bottom:14px}}
+ .grp h2{{font-size:1.05rem;margin:0 0 6px}} .grp small{{color:#9a9fac;font-weight:400}}
+ .task{{color:#4b4f5c;margin-bottom:8px;font-size:.9rem}}
+ table{{width:100%;border-collapse:collapse;font-size:.88rem}}
+ th,td{{text-align:left;padding:5px 8px;border-bottom:1px solid #eee}} th{{color:#7a7f8c;font-weight:600}}
+ a{{color:#3d8bdb}} .s{{padding:1px 7px;border-radius:9px;font-size:.78rem;font-weight:600}}
+ .s.collecting{{background:#fff2cc}} .s.negotiating{{background:#d6e4ff}}
+ .s.decided{{background:#d7f0d7}} .s.failed{{background:#f5d5d5}}
+</style></head><body>
+<header><h1>🛠️ AgentTable — Admin</h1></header><main>
+ <div class="stat"><b>{len(repo.list_groups())}</b> Gruppen · LLM-Calls: <b>{u['c']}</b> ·
+   Tokens: <b>{u['t']:,}</b></div>
+ {rows or '<p>Keine Gruppen.</p>'}
+</main></body></html>"""
+
+
+@app.get("/admin", response_class=HTMLResponse)
+def admin(request: Request):
+    if not settings.admin_password:
+        raise HTTPException(status_code=404, detail="Admin nicht aktiviert")
+    if not _check_admin(request):
+        return HTMLResponse("Login erforderlich.", status_code=401,
+                            headers={"WWW-Authenticate": 'Basic realm="AgentTable Admin"'})
+    return HTMLResponse(_admin_html(request))
 
 
 @app.get("/health")

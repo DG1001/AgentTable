@@ -66,6 +66,8 @@ class Settings:
     tavily_api_key: str
     searxng_base_url: str
 
+    admin_password: str  # empty -> /admin disabled
+
     _llm_defaults: dict = field(default_factory=dict)
 
     def llm_role(self, role: str) -> LLMRoleConfig:
@@ -111,6 +113,7 @@ def _load() -> Settings:
         search_provider=_env("SEARCH_PROVIDER", "none"),
         tavily_api_key=_env("TAVILY_API_KEY", ""),
         searxng_base_url=_env("SEARXNG_BASE_URL", ""),
+        admin_password=_env("ADMIN_PASSWORD", ""),
         _llm_defaults=defaults,
     )
 
