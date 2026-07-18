@@ -4,6 +4,15 @@
 const qs = (s) => document.querySelector(s);
 const tokenFromUrl = new URLSearchParams(location.search).get("t");
 
+// First emoji in a string (for floating table reactions). Skips ✅/❌/⚠️-style
+// status glyphs that agents use in bookkeeping lines.
+function firstEmoji(s) {
+  const m = (s || "").match(/\p{Extended_Pictographic}/gu);
+  if (!m) return null;
+  const skip = new Set(["✅", "❌", "⚠️", "⏸️", "🔗", "📅", "📍", "👀", "🗓️", "🔄"]);
+  return m.find((e) => !skip.has(e)) || null;
+}
+
 // --- tiny markdown: escape, bold/italic, and pipe tables ------------------
 function esc(s) {
   return s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
@@ -233,12 +242,21 @@ async function main() {
   const getPrivate = connect("ws/private", (msg) => {
     if (msg.type === "private_message") appendPrivate(msg.message);
   }, resyncPrivate);
+  let lastStatus = me.task && me.task.status;
   connect("ws/room", (msg) => {
     if (msg.type === "room_message") {
       appendRoom(msg.message);
-      if (msg.message.kind !== "system") AgentViz.speak(msg.message.agent_id);
+      if (msg.message.kind !== "system") {
+        AgentViz.speak(msg.message.agent_id);
+        const em = firstEmoji(msg.message.content);   // float emojis as reactions
+        if (em) AgentViz.react(msg.message.agent_id, em);
+      }
     }
-    if (msg.type === "task_update") { renderTask(msg.task); refreshMe(); }
+    if (msg.type === "task_update") {
+      if (msg.task && msg.task.status === "decided" && lastStatus !== "decided") AgentViz.celebrate("🎉");
+      lastStatus = msg.task && msg.task.status;
+      renderTask(msg.task); refreshMe();
+    }
   }, resyncRoom);
 
   // deterministic readiness (the LLM often forgets to call mark_ready)

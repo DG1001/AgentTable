@@ -4,6 +4,22 @@
 > welcher Begründung getroffen wurden. Neueste Einträge oben.
 > Fachlich: [fachlich.md](fachlich.md) · Technisch: [technisch.md](technisch.md).
 
+## 2026-07-18 — Tisch-Emotes + reichere Sprites (prozedural, self-contained)
+
+Userwunsch: Emotes am Tisch; prüfen, ob freie Grafiken/SVG die Darstellung
+verbessern. Evaluierung: externe Assets (Kenney/CC0, DiceBear/OpenMoji) würden den
+8-Bit-Look brechen bzw. Build/externe Requests erfordern → gegen das
+„self-contained, kein Build"-Prinzip. Entscheidung: **prozedural aufwerten**.
+
+- `AgentViz.react(agentId, emoji)` + `celebrate(emoji)`: schwebende Emote-Emojis
+  über den Sprites (Aufsteigen + Ein/Ausblenden). `app.js` triggert das erste
+  „echte" Emoji jeder Raum-Nachricht (Status-Glyphen wie ✅/📅 gefiltert) und ein
+  🎉-Jubel beim Übergang auf `decided`.
+- Sprites: pro Agent deterministische Varianz aus `agent.id` (Frisur/Haarfarbe/
+  Bart/Brille/Hautton); Szene mit Stühlen, Bierkrügen, warmer Hängelampe.
+- Rein Frontend → **kein Server-Neustart** (statische Dateien; Nutzer laden neu).
+  Playwright-verifiziert.
+
 ## 2026-07-18 — Ort ändern + Tool-Routing dem LLM überlassen
 
 Beobachtung (Screenshot): „bitte die location anpassen, midnightbazar raus" ging

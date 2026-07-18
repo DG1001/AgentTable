@@ -223,11 +223,13 @@ aus dem Backend.
 
 - `app.js` — Boot, REST-Load, WebSockets, Chat-Composer, Start-Dialog.
 - `viz.js` — **8-Bit-Visualisierung (Phase 4)**, gekapselt als `AgentViz`
-  (`init(canvas, agents)`, `speak(agentId)`, `setAgents(...)`). Canvas-2D-Renderer
-  mit prozeduralen Pixel-Sprites (Blöcke, begrenzte Palette), Tisch, Namensschildern,
-  Blinzeln und Sprech-Animation. **Rein clientseitig, keine Backend-Änderung** —
-  `app.js` ruft `AgentViz.speak(msg.agent_id)` bei jeder `room_message` (kind≠system).
-  Die Animation läuft `TALK_MS` (2,6 s) und stoppt dann automatisch.
+  (`init`, `speak`, `react(agentId, emoji)`, `celebrate(emoji)`, `setAgents`).
+  Canvas-2D-Renderer mit **prozeduralen** Pixel-Sprites (keine externen Assets):
+  pro Agent deterministische Varianz (Frisur/Haarfarbe/Bart/Brille/Hautton aus der
+  agent.id), Tisch mit Stühlen/Krügen, warme Lampe, Namensschilder, unregelmäßiges
+  Blinzeln, Sprech-Animation und **Emotes** (schwebende Emojis). **Rein
+  clientseitig** — `app.js` ruft `speak` + `react(erstes Emoji der Nachricht)` bei
+  jeder `room_message` und `celebrate('🎉')` beim Übergang auf `decided`.
 
 ## 10. Betrieb / Deployment
 
