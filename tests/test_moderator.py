@@ -158,7 +158,9 @@ async def test_change_location_updates_decided_task(db, mock_llm):
     # change venue
     msg = await handle_location_change(user, "Zum Tilgshäusle")
     import json
-    assert json.loads(repo.get_task(tid)["result_json"])["location"] == "Zum Tilgshäusle"
+    res = json.loads(repo.get_task(tid)["result_json"])
+    assert res["location"] == "Zum Tilgshäusle"
+    assert res["summary"] is None  # stale decision-time summary dropped
     assert "geändert" in msg
     assert any("Ort geändert" in r["content"] for r in repo.list_room_messages(group_id))
 

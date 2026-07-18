@@ -315,6 +315,9 @@ async def handle_location_change(user, location: str) -> str:
     if new == old:  # no-op (e.g. model re-calls the tool) — don't spam the room
         return f"Der Ort ist bereits {new}." if new else "Es ist aktuell kein Ort gesetzt."
     result["location"] = new
+    # the decision-time summary references the OLD venue in prose -> drop it so it
+    # can't leak the stale location into the ICS description / share card.
+    result["summary"] = None
     repo.update_task_result(task["id"], result)
     label = result.get("slot", {}).get("label", "der Termin")
     if new:
