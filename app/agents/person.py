@@ -21,11 +21,18 @@ ONBOARDING_TURNS = 3
 # no tool call. When that happens we re-prompt once with tool_choice="required" so
 # the model MUST act — but the model still chooses WHICH tool. No keyword->tool map.
 _ACTION_CLAIMS = (
+    # claims something was/gets done
     "erledigt", "ist raus", "ist dran", "losgeschickt", "rausgeschickt", "abgeschickt",
     "weitergeleitet", "gespeichert", "notiert", "eingetragen", "ich frag", "ich frage",
     "ich schick", "ich stoße", "ich stosse", "ich leite", "ich hole", "ich kümmere",
     "ich kuemmere", "gib mir einen moment", "gib mir kurz", "einen moment noch",
     "sobald er", "sobald sie", "mach ich gleich", "ich habe das", "ich hab das",
+    # started / running a room activity
+    "angestoß", "angestoss", "gestartet", "gestart", "diskutieren jetzt",
+    "unterhalten sich", "quatschen jetzt", "läuft jetzt", "laeuft jetzt",
+    "geht los", "los geht",
+    # points the user to the room (strong signal a room action was claimed)
+    "gruppenraum", "schau mal rein", "schau in den", "im raum", "in den raum",
 )
 
 
