@@ -26,13 +26,20 @@ _ADMIN_HINTS = (
     "organisator", "orga ", "anstoß", "angestoß", "losgehen", "loslegen",
     "vorschlag machen", "stand der", "wer noch fehlt", "starten kann",
 )
-def _forced_tool_for(text: str) -> str | None:
-    """Map an action-announcing reply to the room tool it should have called.
+_SMALLTALK_HINTS = (
+    "smalltalk", "small talk", "quatsch", "plausch", "labern", "schnack", "geplauder",
+)
 
-    Deliberately does NOT cover start_smalltalk: forcing that from loose word
-    matches spuriously kicked off small talk (e.g. mid-scheduling). Small talk is
-    only started when the model explicitly calls the tool on the user's request."""
+
+def _forced_tool_for(text: str, include_smalltalk: bool = False) -> str | None:
+    """Map text to the room tool that should be called.
+
+    start_smalltalk is only matched when ``include_smalltalk`` is set — used for
+    the USER's message, so an explicit 'mach Smalltalk' forces it, while a casual
+    word in the model's own reply does NOT spuriously kick one off."""
     t = text.lower()
+    if include_smalltalk and any(h in t for h in _SMALLTALK_HINTS):
+        return "start_smalltalk"
     if any(h in t for h in _SEARCH_HINTS):
         return "ask_search"
     if any(h in t for h in _ADMIN_HINTS):
@@ -133,7 +140,8 @@ async def handle_private_message(user_id: int, text: str) -> list[dict]:
     forced_choice: dict | None = None
     # Intent from the USER's message is far more stable than the model's varying
     # reply wording — use it as the primary signal for forcing a room tool.
-    user_intent = _forced_tool_for(text)
+    # Small talk is only forced from the user's own explicit request.
+    user_intent = _forced_tool_for(text, include_smalltalk=True)
 
     # allow a few tool-call rounds so the agent can act then confirm
     for _round in range(4):
