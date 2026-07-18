@@ -169,6 +169,22 @@ async def test_change_location_updates_decided_task(db, mock_llm):
     assert json.loads(repo.get_task(tid)["result_json"])["location"] is None
 
 
+async def test_admin_request_on_decided_task_is_helpful(db, mock_llm):
+    """ask_admin on a decided task must not say 'no scheduling running' — it should
+    acknowledge the decided meeting and offer to change the venue."""
+    from app.moderator import handle_admin_request
+    group_id, members = bootstrap_group("Runde", ["Alex"])
+    tid = repo.create_task(group_id, PARAMS)
+    repo.update_task_status(tid, "decided", result={
+        "slot": {"start": "2026-07-21T18:00", "end": "2026-07-21T22:00", "label": "Di 21.07. abends"},
+        "location": "Midnightbazar", "summary": "passt"})
+    user = repo.get_user(members[0]["user_id"])
+    # task=None passed (no *active* task) -> must fall back to the decided one
+    msg = await handle_admin_request(user, None, "beide Locations als Optionen aufnehmen")
+    assert "steht bereits" in msg
+    assert "keine Terminfindung" not in msg
+
+
 async def test_change_location_refused_when_not_decided(db, mock_llm):
     from app.moderator import handle_location_change
     group_id, members = bootstrap_group("Runde", ["Alex"])

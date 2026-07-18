@@ -145,17 +145,18 @@ TOOL_SCHEMAS: list[dict] = [
         "function": {
             "name": "change_location",
             "description": (
-                "Ändert oder ENTFERNT den Ort des bereits ENTSCHIEDENEN Termins — "
-                "der Organisator setzt das wirklich um (Datum bleibt). Für 'raus'/"
-                "'entfernen' das Feld leer lassen. NICHT zum Suchen neuer Orte "
-                "verwenden (dafür ask_search)."
+                "Ändert, ergänzt oder ENTFERNT den Ort des bereits ENTSCHIEDENEN "
+                "Termins — der Organisator setzt das wirklich um (Datum bleibt). Der "
+                "Wert kann ein Ort ODER mehrere Optionen als Text sein (z. B. "
+                "'Glemstal-Taverne oder Zum Tilgshäusle'). Für 'raus'/'entfernen' das "
+                "Feld leer lassen. NICHT zum Suchen neuer Orte (dafür ask_search)."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
                     "location": {
                         "type": "string",
-                        "description": "Neuer Ort; leer lassen, um den Ort zu entfernen.",
+                        "description": "Neuer Ort oder Optionen als Text; leer = Ort entfernen.",
                     }
                 },
             },

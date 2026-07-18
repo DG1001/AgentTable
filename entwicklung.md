@@ -4,6 +4,21 @@
 > welcher Begründung getroffen wurden. Neueste Einträge oben.
 > Fachlich: [fachlich.md](fachlich.md) · Technisch: [technisch.md](technisch.md).
 
+## 2026-07-18 — Ort beim entschiedenen Termin ergänzen (mehrere Optionen)
+
+Beobachtung: „beide Locations als Optionen aufnehmen" → Agent nutzte `ask_admin`,
+Organisator antwortete irreführend „läuft keine Terminfindung" (`handle_admin_request`
+sah nur *aktive* Tasks, der Termin war aber entschieden).
+
+Fixes:
+- `handle_admin_request` fällt bei fehlendem aktiven Task auf `latest_task` zurück;
+  für **decided** hilfreiche Antwort („Der Termin steht bereits … sag mir, welche
+  Location(s)") statt „keine Terminfindung"; `failed` ebenfalls behandelt.
+- `change_location`: Beschreibung + Prompt klargestellt — der Ort darf **mehrere
+  Optionen als Text** sein (z. B. „A oder B"); „ergänzen" abgedeckt.
+- Real gegen DeepSeek verifiziert: Routet jetzt zu `change_location`, setzt „A oder
+  B". Test für decided-`handle_admin_request` (39 grün).
+
 ## 2026-07-18 — Modell auf deepseek-v4-flash (Thinking) für zuverlässige Tool-Calls
 
 A/B-Test (Userwunsch): `deepseek-chat` phantomt bei Tool-Calls (z. B. Smalltalk),

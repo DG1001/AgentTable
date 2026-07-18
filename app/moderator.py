@@ -128,6 +128,8 @@ async def handle_admin_request(user, task, request_text: str) -> str:
     if request_text:
         await post_room(group_id, request_text, agent_id=person_agent["id"])
 
+    if task is None:  # no *active* task -> look at the latest (may be decided)
+        task = repo.latest_task(group_id)
     if task is None:
         msg = ("Aktuell läuft keine Terminfindung. Eine Person kann oben über den "
                "Button 'Terminfindung' eine starten.")
@@ -136,6 +138,20 @@ async def handle_admin_request(user, task, request_text: str) -> str:
 
     task = repo.get_task(task["id"])
     status = task["status"]
+    if status == "decided":
+        result = json.loads(task["result_json"]) if task["result_json"] else {}
+        label = result.get("slot", {}).get("label", "der Termin")
+        loc = result.get("location")
+        where = f" @ {loc}" if loc else " (Ort noch offen)"
+        msg = (f"Der Termin steht bereits: {label}{where}. Wenn du den Ort ändern oder "
+               "weitere Optionen ergänzen willst, sag mir einfach, welche Location(s) — "
+               "ich passe das an.")
+        await post_room(group_id, msg, agent_id=admin["id"])
+        return msg
+    if status == "failed":
+        msg = "Die letzte Terminfindung ist leider gescheitert — wir können jederzeit eine neue starten."
+        await post_room(group_id, msg, agent_id=admin["id"])
+        return msg
     if status == "collecting":
         persons = repo.list_person_agents(group_id)
         missing = [repo.get_user(a["user_id"])["display_name"]
