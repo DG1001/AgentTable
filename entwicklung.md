@@ -4,6 +4,22 @@
 > welcher Begründung getroffen wurden. Neueste Einträge oben.
 > Fachlich: [fachlich.md](fachlich.md) · Technisch: [technisch.md](technisch.md).
 
+## 2026-07-18 — Langzeit-Gedächtnis der Personen-Agenten
+
+Userwunsch: Personas lernen aus dem Gespräch und merken sich Dinge session-
+übergreifend.
+
+- Schema **v3** (additiv): Tabelle `user_memory(user_id, content, created_at)`.
+  `repo.add_memory` (exakt-Dedupe, Cap 50) / `list_memories`.
+- Tool **`remember(fact)`** (immer verfügbar, via `apply_tool_call`) — der Agent
+  hält dauerhafte Vorlieben/Rahmenbedingungen fest (keine flüchtigen Termine).
+- Injektion in `person_private` / `person_room` / `smalltalk_person` als
+  `{memory}` (`context.user_memory_text`); Prompt weist proaktives Merken/Nutzen an.
+- `/api/me` liefert `memories`; Frontend zeigt „🧠 Was ich mir gemerkt habe"
+  (aktualisiert nach Agenten-Nachrichten).
+- Real gegen DeepSeek verifiziert (lernt „vegetarisch/Nachtmensch" → ruft ab).
+  Tests (remember/Dedupe/Cap/Migration) — 42 grün.
+
 ## 2026-07-18 — Ort beim entschiedenen Termin ergänzen (mehrere Optionen)
 
 Beobachtung: „beide Locations als Optionen aufnehmen" → Agent nutzte `ask_admin`,

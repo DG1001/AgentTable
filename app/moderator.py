@@ -224,6 +224,7 @@ async def _smalltalk_say(agent, topic: str, group_id: int, research: str = "") -
         "smalltalk_person",
         display_name=user["display_name"],
         persona=user["persona"] or "(keine Persona)",
+        memory=context.user_memory_text(user["id"]),
         topic_line=topic_line,
         research_line=research_line,
         recent_messages=context.recent_room_text(group_id),

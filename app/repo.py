@@ -66,6 +66,43 @@ def touch_user(user_id: int, db: Database | None = None) -> None:
     _db(db).execute("UPDATE user SET last_seen_at = datetime('now') WHERE id = ?", (user_id,))
 
 
+# --- long-term per-user memory -------------------------------------------
+def add_memory(user_id: int, content: str, cap: int = 50, db: Database | None = None) -> bool:
+    """Store a durable fact about the user (deduped, capped). Returns True if added."""
+    content = (content or "").strip()
+    if not content:
+        return False
+    d = _db(db)
+    existing = d.query(
+        "SELECT lower(content) AS c FROM user_memory WHERE user_id = ?", (user_id,)
+    )
+    if content.lower() in {r["c"] for r in existing}:
+        return False  # exact dedupe
+    d.execute("INSERT INTO user_memory (user_id, content) VALUES (?, ?)", (user_id, content))
+    # cap: drop the oldest beyond `cap`
+    d.execute(
+        "DELETE FROM user_memory WHERE user_id = ? AND id NOT IN "
+        "(SELECT id FROM user_memory WHERE user_id = ? ORDER BY id DESC LIMIT ?)",
+        (user_id, user_id, cap),
+    )
+    return True
+
+
+def list_memories(user_id: int, limit: int | None = None, db: Database | None = None) -> list[sqlite3.Row]:
+    sql = "SELECT * FROM user_memory WHERE user_id = ? ORDER BY id"
+    params: list = [user_id]
+    if limit is not None:
+        sql = "SELECT * FROM user_memory WHERE user_id = ? ORDER BY id DESC LIMIT ?"
+        params.append(limit)
+        rows = _db(db).query(sql, params)
+        return list(reversed(rows))
+    return _db(db).query(sql, params)
+
+
+def delete_memory(memory_id: int, db: Database | None = None) -> None:
+    _db(db).execute("DELETE FROM user_memory WHERE id = ?", (memory_id,))
+
+
 # --- agents ---------------------------------------------------------------
 def create_agent(
     group_id: int,

@@ -158,12 +158,21 @@ function renderReadyBar(task, ready) {
   }
 }
 
+function renderMemories(list) {
+  const box = qs("#memory-box");
+  if (!list || !list.length) { box.classList.add("hidden"); return; }
+  box.classList.remove("hidden");
+  qs("#memory-count").textContent = list.length;
+  qs("#memory-list").innerHTML = list.map((m) => `<li>${renderMarkdown(m)}</li>`).join("");
+}
+
 async function refreshMe() {
   try {
     const me = await (await fetch("api/me" + (tokenFromUrl ? `?t=${tokenFromUrl}` : ""))).json();
     myReady = !!me.ready;
     renderTask(me.task);
     renderReadyBar(me.task, myReady);
+    renderMemories(me.memories);
   } catch {}
 }
 
@@ -234,13 +243,17 @@ async function main() {
   renderTask(me.task);
   myReady = !!me.ready;
   renderReadyBar(me.task, myReady);
+  renderMemories(me.memories);
 
   if (!me.onboarding_done && qs("#private-log").children.length === 0) {
     appendPrivate({ role: "agent", content: "Hi! Ich bin dein persönlicher Agent. Erzähl mir kurz etwas über dich — wie sollen wir dich nennen?" });
   }
 
   const getPrivate = connect("ws/private", (msg) => {
-    if (msg.type === "private_message") appendPrivate(msg.message);
+    if (msg.type === "private_message") {
+      appendPrivate(msg.message);
+      if (msg.message.role === "agent") refreshMe();  // may have learned/remembered something
+    }
   }, resyncPrivate);
   let lastStatus = me.task && me.task.status;
   connect("ws/room", (msg) => {

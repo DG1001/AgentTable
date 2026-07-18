@@ -76,6 +76,25 @@ TOOL_SCHEMAS: list[dict] = [
     {
         "type": "function",
         "function": {
+            "name": "remember",
+            "description": (
+                "Merkt sich eine DAUERHAFTE Info oder Vorliebe über den User — "
+                "session-übergreifend (z. B. 'isst vegetarisch', 'kann selten "
+                "freitags', 'mag Biergärten', 'ist Nachtmensch'). NUR bleibende "
+                "Dinge, KEINE flüchtigen Task-Details wie einzelne Termine."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "fact": {"type": "string", "description": "Die zu merkende Info, kurz."}
+                },
+                "required": ["fact"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "ask_admin",
             "description": (
                 "Wendet sich im Namen des Users an den Organisator-Agenten im Gruppenraum "
@@ -185,9 +204,10 @@ TOOL_SCHEMAS: list[dict] = [
 ]
 
 
-# The three "ask" tools are useful any time (also after a decision, e.g. to ask
-# the searcher for a venue); the scheduling tools only make sense during a task.
-_ASK_NAMES = {"ask_admin", "ask_agent", "ask_search", "start_smalltalk", "change_location"}
+# These tools are useful any time (also after a decision / without an active task);
+# the scheduling tools only make sense during a task.
+_ASK_NAMES = {"ask_admin", "ask_agent", "ask_search", "start_smalltalk",
+              "change_location", "remember"}
 ASK_TOOL_SCHEMAS = [t for t in TOOL_SCHEMAS if t["function"]["name"] in _ASK_NAMES]
 SCHEDULING_TOOL_SCHEMAS = [t for t in TOOL_SCHEMAS if t["function"]["name"] not in _ASK_NAMES]
 
@@ -275,6 +295,13 @@ def apply_tool_call(
         if errors:
             msg += " Hinweis: " + " ".join(errors)
         return ToolResult(True, msg)
+
+    if name == "remember":
+        fact = (args.get("fact") or "").strip()
+        if not fact:
+            return ToolResult(False, "Leere Info — nichts zu merken.")
+        added = repo.add_memory(user_id, fact, db=db)
+        return ToolResult(True, f"Gemerkt: {fact}" if added else f"Wusste ich schon: {fact}")
 
     if name == "add_note":
         text = (args.get("text") or "").strip()

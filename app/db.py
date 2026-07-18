@@ -118,6 +118,20 @@ MIGRATIONS: list[tuple[int, str]] = [
         CREATE INDEX idx_task_share_token ON task(share_token);
         """,
     ),
+    # v3: long-term per-user memory — durable facts the agent learns across
+    # sessions (preferences, constraints). Additive.
+    (
+        3,
+        """
+        CREATE TABLE user_memory (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id     INTEGER NOT NULL REFERENCES user(id),
+            content     TEXT NOT NULL,
+            created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX idx_user_memory_user ON user_memory(user_id, id);
+        """,
+    ),
 ]
 
 

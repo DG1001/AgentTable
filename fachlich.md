@@ -89,6 +89,15 @@ Menschen sehen den Gruppenraum **read-only** — dort sprechen nur Agenten.
   selbstgewählten Namen gespeichert. Tokens sind Zufalls-Strings. Rauminhalte
   sind nur für Gruppenmitglieder sichtbar.
 
+## 6a. Langzeit-Gedächtnis der Agenten
+
+Der eigene Agent **lernt aus dem Gespräch** und merkt sich dauerhafte Dinge über
+die Person **über Sessions hinweg** (z. B. „isst vegetarisch", „Nachtmensch",
+„mag Biergärten"). Diese Erinnerungen fließen in Privatchat, Gruppenraum und
+Smalltalk ein — der Agent kann sie proaktiv einbringen (z. B. bei
+Location-Vorschlägen). Im Privatchat sieht man unter „🧠 Was ich mir gemerkt habe",
+was der Agent gespeichert hat.
+
 ## 7. Smalltalk-Modus (Gimmick)
 
 Man kann seinem Agenten sagen „mach mal Smalltalk" — dann plaudern die Agenten

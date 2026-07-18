@@ -65,6 +65,11 @@ button.secondary { background: #e9e4da; color: var(--ink); }
 button:hover { filter: brightness(1.05); }
 
 .persona { margin: 10px 14px; padding: 10px 12px; background: #fbf7ee; border: 1px dashed var(--border); border-radius: 8px; font-size: 0.85rem; font-style: italic; }
+.memory { margin: 0 14px 6px; font-size: 0.82rem; }
+.memory.hidden { display: none; }
+.memory summary { cursor: pointer; color: var(--muted); padding: 4px 0; }
+.memory ul { margin: 4px 0 6px; padding-left: 20px; color: var(--ink); }
+.memory li { margin: 2px 0; }
 .task-panel { border-bottom: 1px solid var(--border); }
 .task-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px 0; }
 .task-head h2 { border: none; padding: 0; }

@@ -63,6 +63,7 @@ def me(request: Request):
         "agents": [serialize.agent_public(a) for a in repo.list_agents(user["group_id"])],
         "task": serialize.task_public(task),
         "ready": ready,
+        "memories": [m["content"] for m in repo.list_memories(user["id"])],
     }
 
 

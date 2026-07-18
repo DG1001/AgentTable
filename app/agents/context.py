@@ -38,6 +38,14 @@ def user_availability_summary(user_id: int, db=None) -> str:
     return "\n".join(lines)
 
 
+def user_memory_text(user_id: int, db=None) -> str:
+    """Bulleted long-term memory about the user (or a hint that there's none yet)."""
+    rows = repo.list_memories(user_id, db=db)
+    if not rows:
+        return "(noch nichts gemerkt)"
+    return "\n".join(f"- {r['content']}" for r in rows)
+
+
 def recent_room_text(group_id: int, k: int = 10, db=None) -> str:
     """Last ``k`` room messages rendered as 'Name: text' lines."""
     rows = repo.list_room_messages(group_id, limit=k, db=db)
